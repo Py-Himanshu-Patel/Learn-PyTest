@@ -10,6 +10,7 @@ django = "*"
 pipenv = "*"
 install = "*"
 pytest = "*"
+pytest-django = "*"
 
 [requires]
 python_version = "3.8"
