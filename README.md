@@ -12,8 +12,11 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 
 1. [Intro to PyTest](#PyTest)
 2. [What are Fixtures and how to use them](#states-of-fixtures-and-factories)  
-  2.1 Fixtures  
-  2.2 Accessing Database in Unit Test
+  2.1 [Fixtures](#Fixtures)  
+  2.2 [Accessing Database in Unit Test](#access-database)  
+  2.3 [conftest.py file](#`conftest.py`---making-fixture-common-for-several-modules)  
+  2.4 [Factory]()
+3. [Factory Boy and Faker](#factory-boy-and-faker)
 
 ## Resources and Credits
 
@@ -376,7 +379,7 @@ ______ ERROR at setup of test_set_check_password2 _______
 =================== 2 errors in 0.05s ===================
 ```
 
-### `conftest.py` - Making fixture common for several modules.
+### `conftest.py` - Making fixture common for several modules
 
 To fix this we create a file `conftest.py` in same dir where the test modules are located which shares the same fixture.
 
@@ -501,3 +504,7 @@ ____________ test_create_user_factory _____________
 user_firstname
 ================ 1 passed in 0.25s ================
 ```
+
+## Factory Boy and Faker
+
+For the purpose of generating fake data.
