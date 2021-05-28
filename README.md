@@ -376,7 +376,7 @@ ______ ERROR at setup of test_set_check_password2 _______
 =================== 2 errors in 0.05s ===================
 ```
 
-## `conftest.py` - Making fixture common for several modules.
+### `conftest.py` - Making fixture common for several modules.
 
 To fix this we create a file `conftest.py` in same dir where the test modules are located which shares the same fixture.
 
@@ -440,3 +440,64 @@ Test 2
 ```
 
 Now we can access module level fixture in each test in same or sub dir without importing it.
+
+### Factory as a fixture
+
+This factory will produce many different user which can be obtained using many different fixtures. Factory returns a function which can be used to create new user in minimal possible way.
+
+```python
+@pytest.fixture()
+def new_user_factory(db):
+    # inner function
+    def create_app_user(
+        username: str,
+        password: str = None,
+        first_name: str = "firstname", 
+        last_name: str = "lastname",
+        email: str = "user@email.com",
+        is_staff: bool = False,
+        is_superuser: bool = False,
+        is_active: bool = True
+    ):
+        user = User.objects.create(
+            username=username,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            is_staff=is_staff,
+            is_superuser=is_superuser,
+            is_active=is_active
+        )
+        return user
+    return create_app_user
+
+@pytest.fixture
+def create_new_user(db, new_user_factory):
+    return new_user_factory(
+            'Test User',
+            'password',
+            'user_firstname',
+            is_staff=True
+        )
+```
+
+```python
+import pytest
+
+def test_create_user_factory(create_new_user):
+    print(create_new_user.first_name)
+    assert  create_new_user.first_name == "user_firstname"
+```
+
+```bash
+collected 1 item                                  
+
+apps/MyApp/tests/test_10.py .               [100%]
+
+===================== PASSES ======================
+____________ test_create_user_factory _____________
+-------------- Captured stdout call ---------------
+user_firstname
+================ 1 passed in 0.25s ================
+```
