@@ -7,6 +7,8 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 - Python
 - Django
 - PyTest
+- PyTest-Factory Boy
+- Faker
 
 ## Index
 
@@ -15,7 +17,7 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
   2.1 [Fixtures](#Fixtures)  
   2.2 [Accessing Database in Unit Test](#access-database)  
   2.3 [conftest.py file](#`conftest.py`---making-fixture-common-for-several-modules)  
-  2.4 [Factory]()
+  2.4 [Factory](#factory-as-a-fixture)
 3. [Factory Boy and Faker](#factory-boy-and-faker)
 
 ## Resources and Credits
@@ -507,4 +509,131 @@ user_firstname
 
 ## Factory Boy and Faker
 
-For the purpose of generating fake data.
+For the purpose of generating fake data. Factory Boy is basically fixture replacement tool. Factories are defined in a nice, clean and readable manner.
+
+Make a new App and Test folder inside it. make a `factory.py` file to declare a factory class and a `conftest.py` file. Don't forget to include a `__init__.py` file inside `Test` dir of each App.
+
+```python
+# factory.py
+
+import factory
+from django.contrib.auth.models import User
+from faker import Faker
+fake = Faker()
+
+class UserFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = User
+
+    # specifing some default args to user model
+    username = fake.name()
+    is_staff = True
+```
+
+Register this factory in `conftest.py` file in same test folder. We will be running test cases for both the app seperately to avoid conflict in naming of `test_*` modules and other settings, factory and fixtures.
+
+```python
+# conftest.py
+import pytest
+
+from pytest_factoryboy import register
+from .factory import UserFactory
+
+register(UserFactory)   # now fixture to access this factory is user_factory
+```
+
+```python
+# test 1
+import  pytest
+
+def test_new_user(user_factory):
+    print(user_factory.username)
+    assert True
+```
+
+```bash
+(Learn-PyTest)  src : pytest -rP apps/FactoryApp/Tests/
+================ test session starts =================
+apps/FactoryApp/Tests/test_1.py .              [100%]
+
+======================= PASSES =======================
+___________________ test_new_user ____________________
+---------------- Captured stdout call ----------------
+Julie Arnold
+================= 1 passed in 0.06s ==================
+```
+
+Here we created user but we don't add this user to database hence we are not required to add any decorator of pytest to test function. Do repeat this we can use `build` option of factory.
+
+```python
+import  pytest
+
+def test_new_user(user_factory):
+    user = user_factory.build()
+    print(user.username)
+    assert True
+```
+
+```bash
+======================= PASSES =======================
+___________________ test_new_user ____________________
+---------------- Captured stdout call ----------------
+Amber Ritter
+================= 1 passed in 0.07s ==================
+```
+
+Now if we try to create a user i.e. create a new user and save it to database we gets an error.
+
+```python
+import  pytest
+
+def test_new_user(user_factory):
+    # can not access database to save created user
+    user = user_factory.create()
+    print(user.username)
+    assert True
+```
+
+We can remove the error by one of the following ways (first is prefered)
+
+Here we use only build thus the object do not gets into database.
+
+```python
+import  pytest
+from django.contrib.auth.models import User
+
+def test_new_user(db, user_factory):
+    user = user_factory.create()
+    print(User.objects.count())
+    print(user.username)
+    assert True
+```
+
+```bash
+--------------- Captured stdout call ----------------
+0
+Meghan Johnson
+```
+
+```python
+import  pytest
+from django.contrib.auth.models import User
+
+# we can check the obj we create using factory 
+# is actually got saved into User table
+@pytest.mark.django_db
+def test_new_user(user_factory):
+    user = user_factory.create()
+    print(User.objects.count())
+    print(user.username)
+    assert True
+```
+
+```bash
+--------------- Captured stdout call ----------------
+1
+Ryan Hubbard
+```
+
+Instead creating user in test case we prefer to introduce fixture here.
+

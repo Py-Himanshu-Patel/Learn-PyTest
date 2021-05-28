@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 django = "*"
 python-decouple = "*"
+pytest-factoryboy = "*"
+faker = "*"
 
 [dev-packages]
 pipenv = "*"
