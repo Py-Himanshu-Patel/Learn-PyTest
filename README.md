@@ -10,12 +10,12 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 
 ## Index
 
-1. Intro to PyTest
-2. What are Fixtures and how to use them  
-  2.1 Fixtures
+1. [Intro to PyTest](#PyTest)
+2. [What are Fixtures and how to use them](#states-of-fixtures-and-factories)  
+  2.1 Fixtures  
   2.2 Accessing Database in Unit Test
 
-## Resources
+## Resources and Credits
 
 - [Very Academy YouTube Playlist](https://www.youtube.com/playlist?list=PLOLrQ9Pn6caw3ilqDR8_qezp76QuEOlHY)
 - [PyTest Official Doc](https://docs.pytest.org/en/6.2.x/)
@@ -112,8 +112,8 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
     ======== 1 skipped, 1 xfailed, 1 xpassed in 0.08s =====
     ```
 
-    xfailed : expected to fail
-    xpassed: exceptionally pass
+    **xfailed** : expected to fail  
+    **xpassed**: exceptionally pass
 
 - Put custom marker in `pytest.ini` file
 
@@ -152,9 +152,10 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 
 ## States of Fixtures and Factories
 
-1. Arrange
-2. Act
-3. Assert
+1. Arrange  - prepare everything for our test
+2. Act      - state-changing action that kicks off the behavior we want to test
+3. Assert   - where we look at that resulting state and check if it looks how we’d expect
+4. CleanUp  - where the test clean up after execution, so other tests aren’t being accidentally influenced by it.
 
 ### Fixtures
 
@@ -286,7 +287,7 @@ _______________ test_user_create2 ________________
 _________________ test_example1 __________________
 ```
 
-This shows the database is seperate for two unit test cases that is both are supposed to run in isolation. Execution or failure of one should not prevent another from passing. 
+This shows the database is seperate for two unit test cases that is both are supposed to run in isolation. Execution or failure of one should not prevent another from passing.
 
 In case we want to access the very same data from database in two tests then we must go for fixtures. Where we infact put same data in database for each test case. Or think of it as each test case access same state of database. Since fixture access the database we don't need to access it in our test cases.
 
@@ -306,5 +307,136 @@ def test_set_check_password(create_user):
     assert create_user.check_password('new-password') == True
 ```
 
-But here we addressed only one problem that is test function do not access
-data repeatedly but what if we want that that data to be create only once for a class or session and not repeatedly for every function call.
+But here we addressed only one problem that is **we don't write data creation code repeatedly in each test** but what if we want that that data to be accessible by each of the test.py file or each of the test module in same or in sub dir of where the fixture is present. then we must declare the fixture on module level i.e. seperate module for fixture with name `conftest.py` file and that fixture will be available for all the test in same or in sub directory.
+
+```bash
+(Learn-PyTest)  src : pytest -rP apps/MyApp/tests/test_8.py
+```
+
+See the repeated execution of fixture for same data, Also this is accessible for test in this file only.
+
+```python
+import pytest
+from django.contrib.auth.models import User
+
+@pytest.fixture
+def create_user(db):
+    user = User.objects.create_user(
+        username='test',
+        email='test@email.com'
+    )
+    print('Creating User')
+    return user
+
+def test_set_check_password1(create_user):
+    print("Set Password 1")
+    create_user.set_password('new-password1')
+    assert create_user.check_password('new-password1') == True
+
+def test_set_check_password2(create_user):
+    print("Set Password 2")
+    create_user.set_password('new-password2')
+    assert create_user.check_password('new-password2') == True
+```
+
+```bash
+======================= PASSES =======================
+______________ test_set_check_password1 ______________
+--------------- Captured stdout setup ----------------
+Creating User
+---------------- Captured stdout call ----------------
+Set Password 1
+______________ test_set_check_password2 ______________
+--------------- Captured stdout setup ----------------
+Creating User
+---------------- Captured stdout call ----------------
+Set Password 2
+================= 2 passed in 0.87s ==================
+```
+
+Modifyig above code to something below won't fix the problem but infact gives an error.
+
+```python
+@pytest.fixture(scope="session")
+def create_user(db):
+    user = User.objects.create_user(
+        username='test',
+        email='test@email.com'
+    )
+    print('Creating User')
+    return user
+```
+
+```bash
+======================== ERRORS =========================
+______ ERROR at setup of test_set_check_password1 _______
+ScopeMismatch: You tried to access the 'function' scoped fixture 'db' with a 'session' scoped request object, involved factories
+______ ERROR at setup of test_set_check_password2 _______
+... same
+=================== 2 errors in 0.05s ===================
+```
+
+## `conftest.py` - Making fixture common for several modules.
+
+To fix this we create a file `conftest.py` in same dir where the test modules are located which shares the same fixture.
+
+```bash
+apps/MyApp/tests/
+├── conftest.py
+├── __pycache__
+├── test_1.py
+├── test_2.py
+├── test_3.py
+├── test_4.py
+├── test_5.py
+├── test_6.py
+├── test_7.py
+├── test_8.py
+└── test_9.py
+```
+
+```python
+# conftest.py
+import pytest
+from django.contrib.auth.models import User
+
+
+@pytest.fixture()
+def create_user(db):
+    user = User.objects.create_user(
+        username='test',
+        email='test@email.com'
+    )
+    print('Creating User')
+    return user
+```
+
+```python
+# test_9.py
+import pytest
+
+def test_set_check_password1(create_user):
+    print("Test 1")
+    assert create_user.username == 'test'
+
+def test_set_check_password2(create_user):
+    print("Test 2")
+    assert create_user.username == 'test'
+```
+
+```bash
+================ PASSES =================
+_______ test_set_check_password1 ________
+--------- Captured stdout setup ---------
+Creating User
+--------- Captured stdout call ----------
+Test 1
+_______ test_set_check_password2 ________
+--------- Captured stdout setup ---------
+Creating User
+--------- Captured stdout call ----------
+Test 2
+=========== 2 passed in 0.57s ===========
+```
+
+Now we can access module level fixture in each test in same or sub dir without importing it.
