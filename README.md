@@ -1,6 +1,19 @@
 # Learn-PyTest
 
-Learning PyTest and Selenium to create unit test and other automation
+Learning PyTest and Selenium to create unit test and other automation. Starting right from setting up pytest till its common use cases.
+
+## Technology Used
+
+- Python
+- Django
+- PyTest
+
+## Index
+
+1. Intro to PyTest
+2. What are Fixtures and how to use them  
+  2.1 Fixtures
+  2.2 Accessing Database in Unit Test
 
 ## Resources
 
@@ -23,6 +36,14 @@ Learning PyTest and Selenium to create unit test and other automation
 - `pytest -x` Prevent Further execution of other test when one test fails.
 
 - By default pytest do not print any print statement inside unit test. We can do that by using `pytest -rP`
+
+    ```python
+    import pytest
+
+    def test_example1():
+        print('Inside string test')
+        assert 1 == 1
+    ```
 
     Before
 
@@ -64,35 +85,35 @@ Learning PyTest and Selenium to create unit test and other automation
 
 - We can skip some test cases or mark them as expected fail.
 
-```python
-import pytest
+    ```python
+    import pytest
 
-@pytest.mark.skip
-def test_example2():
-    print("Inside string test")
-    assert 'Hi' == 'Hi'
+    @pytest.mark.skip
+    def test_example2():
+        print("Inside string test")
+        assert 'Hi' == 'Hi'
 
-@pytest.mark.xfail
-def test_example1():
-    assert 1 == 1
+    @pytest.mark.xfail
+    def test_example1():
+        assert 1 == 1
 
-@pytest.mark.xfail
-def test_example3():
-    assert 1 == 2
-```
+    @pytest.mark.xfail
+    def test_example3():
+        assert 1 == 2
+    ```
 
-```bash
-(Learn-PyTest)  src : pytest
-=================== test session starts ==============
-collected 3 items                                         
+    ```bash
+    (Learn-PyTest)  src : pytest
+    =================== test session starts ==============
+    collected 3 items                                         
 
-apps/MyApp/tests.py sXx                        [100%]
+    apps/MyApp/tests.py sXx                        [100%]
 
-======== 1 skipped, 1 xfailed, 1 xpassed in 0.08s =====
-```
+    ======== 1 skipped, 1 xfailed, 1 xpassed in 0.08s =====
+    ```
 
-xfailed : expected to fail
-xpassed: exceptionally pass
+    xfailed : expected to fail
+    xpassed: exceptionally pass
 
 - Put custom marker in `pytest.ini` file
 
@@ -107,6 +128,17 @@ xpassed: exceptionally pass
     ```
 
     Under marker a marker (**slow**) with description (**slow running test**). Now we can use this marker to run only those test cases which are marked with this marker.
+
+    ```python
+    import pytest
+
+    @pytest.mark.slow
+    def test_example1():
+        assert 1 == 1
+
+    def test_example2():
+        assert 2 == 2
+    ```
 
     ```bash
     (Learn-PyTest)  src : pytest -m "slow"
@@ -123,6 +155,8 @@ xpassed: exceptionally pass
 1. Arrange
 2. Act
 3. Assert
+
+### Fixtures
 
 - **Fixtures**: they are used to feed data to the tests such as databases connections, URLs or input data. Fixtures can be used at start and end of the test.
 - Fixture can be defined in 4 ways.
@@ -191,6 +225,20 @@ Example 2
 Lets see how we can use fixtures to be used before and after a test.
 
 ```python
+import pytest
+
+@pytest.fixture
+def yield_fixture():
+    print("Start Test Phase")
+    yield 1
+    print("End Test Phase")
+
+def test_example(yield_fixture):
+    print('Example Test Case')
+    assert 1 == yield_fixture
+```
+
+```bash
 ===================== PASSES =====================
 __________________ test_example __________________
 ------------- Captured stdout setup --------------
@@ -201,3 +249,62 @@ Example Test Case
 End Test Phase
 =============== 1 passed in 0.08s ================
 ```
+
+### Access Database
+
+```python
+import pytest
+from django.contrib.auth.models import User
+
+@pytest.mark.django_db
+def test_user_create1():
+    User.objects.create_user(
+        username='test',
+        email='test@email.com',
+        password='abcd@1234'
+    )
+    count = User.objects.count()
+    print(count)
+    assert  count == 1
+
+
+@pytest.mark.django_db
+def test_user_create2():
+    count = User.objects.count()
+    print(count)
+    assert  count == 0
+```
+
+```bash
+===================== PASSES =====================
+_______________ test_user_create1 ________________
+-------------- Captured stdout call --------------
+1
+_______________ test_user_create2 ________________
+-------------- Captured stdout call --------------
+0
+_________________ test_example1 __________________
+```
+
+This shows the database is seperate for two unit test cases that is both are supposed to run in isolation. Execution or failure of one should not prevent another from passing. 
+
+In case we want to access the very same data from database in two tests then we must go for fixtures. Where we infact put same data in database for each test case. Or think of it as each test case access same state of database. Since fixture access the database we don't need to access it in our test cases.
+
+```python
+import pytest
+from django.contrib.auth.models import User
+
+@pytest.fixture
+def create_user(db):
+    return User.objects.create_user(
+        username='test',
+        email='test@email.com'
+    )
+
+def test_set_check_password(create_user):
+    create_user.set_password('new-password')
+    assert create_user.check_password('new-password') == True
+```
+
+But here we addressed only one problem that is test function do not access
+data repeatedly but what if we want that that data to be create only once for a class or session and not repeatedly for every function call.
