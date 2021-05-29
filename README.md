@@ -10,6 +10,7 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 - PyTest-Factory Boy
 - Faker
 - Django REST Framework
+- Selenium
 
 ## Index
 
@@ -21,6 +22,7 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
    2.4 [Factory](#factory-as-a-fixture)
 3. [Factory Boy and Faker](#factory-boy-and-faker)
 4. [Parametrizing Test](#parametrizing-fixtures-and-test-functions)  
+5. [Pytest in Selenium](#intro-to-selenium)
 
 ## Resources and Credits
 
@@ -887,3 +889,33 @@ _ test_product_instance[Netflix-3-New Series-netflix--45.99-400] _
 WARNING  django.request:log.py:224 Bad Request: /api/product/
 ======================= 2 passed in 0.31s =======================
 ```
+
+## Intro to Selenium
+
+```bash
+# create a new app
+(Learn-PyTest)  src : mkdir apps/SeleniumApp
+(Learn-PyTest)  src : ./manage.py startapp SeleniumApp apps/SeleniumApp
+```
+
+Download `chromedriver` as per your browser version.
+
+Put `chromedriver` inside project and let the instance refer to its location in project. Or include its location in environment PATH for discovery without explict declaration. Server need not to be in running state to check these selenium tests.
+
+```python
+import pytest
+from django.test import LiveServerTestCase
+from selenium import webdriver
+
+
+class AdminTest(LiveServerTestCase):
+    def test_admin_page(self):
+        # locate the chromedriver (relative to root/manage.py of project )
+        driver = webdriver.Chrome('./chromedriver')
+        # get the page via url provided
+        driver.get(f"{self.live_server_url}/admin/")
+        # check if 'Log in | Django site admin' is present in page title
+        assert  "Log in | Django site admin" in driver.title
+
+```
+
