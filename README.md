@@ -1028,3 +1028,42 @@ collected 2 items
 apps/SeleniumApp/Test/test_4.py::TestAdminPage::test_admin_page[chrome] PASSED [ 50%]
 apps/SeleniumApp/Test/test_4.py::TestAdminPage::test_admin_page[firefox] PASSED [100%]
 ```
+
+## Take screenshot with selenium while testing
+
+```python
+import os
+import pytest
+
+
+def take_screenshot(driver, name):
+    # first make the required dir
+    os.makedirs(
+        os.path.join("screenshot",  # path where to make directory
+        os.path.dirname(name)       # name of new dir
+        ),
+        exist_ok=True               # no error if already exists
+    )
+    # now save the image to given dir with given name
+    driver.save_screenshot(
+        # fullname of path where to save ss
+        os.path.join("screenshot", name)
+    )
+
+
+@pytest.mark.usefixtures("driver_init_screenshot")
+class TestScreenshot:
+    def test_screenshot_admin(self, live_server):
+        self.driver.get(f"{live_server.url}/admin/")
+        take_screenshot(self.driver, "admin/" +
+                        "admin_" + self.browser + ".png")
+        assert "Log in | Django site admin" in self.driver.title
+```
+
+Saving screenshot for three different type
+
+```bash
+apps/SeleniumApp/Test/test_5.py::TestScreenshot::test_screenshot_admin[chrome1980] PASSED [ 33%]
+apps/SeleniumApp/Test/test_5.py::TestScreenshot::test_screenshot_admin[chrome411] PASSED [ 66%]
+apps/SeleniumApp/Test/test_5.py::TestScreenshot::test_screenshot_admin[firefox] PASSED [100%]
+```
