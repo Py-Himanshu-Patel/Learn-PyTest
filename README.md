@@ -14,10 +14,10 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 
 1. [Intro to PyTest](#PyTest)
 2. [What are Fixtures and how to use them](#states-of-fixtures-and-factories)  
-  2.1 [Fixtures](#Fixtures)  
-  2.2 [Accessing Database in Unit Test](#access-database)  
-  2.3 [conftest.py file](#`conftest.py`---making-fixture-common-for-several-modules)  
-  2.4 [Factory](#factory-as-a-fixture)
+   2.1 [Fixtures](#Fixtures)  
+   2.2 [Accessing Database in Unit Test](#access-database)  
+   2.3 [conftest.py file](#`conftest.py`---making-fixture-common-for-several-modules)  
+   2.4 [Factory](#factory-as-a-fixture)
 3. [Factory Boy and Faker](#factory-boy-and-faker)
 
 ## Resources and Credits
@@ -42,135 +42,135 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 
 - By default pytest do not print any print statement inside unit test. We can do that by using `pytest -rP`
 
-    ```python
-    import pytest
+  ```python
+  import pytest
 
-    def test_example1():
-        print('Inside string test')
-        assert 1 == 1
-    ```
+  def test_example1():
+      print('Inside string test')
+      assert 1 == 1
+  ```
 
-    Before
+  Before
 
-    ```bash
-    (Learn-PyTest)  src : pytest
-    ============== test session starts ==============
-    collected 2 items                               
+  ```bash
+  (Learn-PyTest)  src : pytest
+  ============== test session starts ==============
+  collected 2 items
 
-    apps/MyApp/tests.py ..                    [100%]
+  apps/MyApp/tests.py ..                    [100%]
 
-    =============== 2 passed in 0.05s ===============
-    ```
+  =============== 2 passed in 0.05s ===============
+  ```
 
-    After
+  After
 
-    ```bash
-    collected 2 items                               
+  ```bash
+  collected 2 items
 
-    apps/MyApp/tests.py ..                    [100%]
+  apps/MyApp/tests.py ..                    [100%]
 
-    ==================== PASSES =====================
-    _________________ test_example2 _________________
-    ------------- Captured stdout call --------------
-    Inside string test
-    =============== 2 passed in 0.04s ===============
-    ```
+  ==================== PASSES =====================
+  _________________ test_example2 _________________
+  ------------- Captured stdout call --------------
+  Inside string test
+  =============== 2 passed in 0.04s ===============
+  ```
 
 - Running a specific folder, app, file or test case
 
-    ```bash
-    (Learn-PyTest)  src : pytest apps/MyApp/tests.py::test_example2
-    =================== test session starts ===========
-    collected 1 item                                          
+  ```bash
+  (Learn-PyTest)  src : pytest apps/MyApp/tests.py::test_example2
+  =================== test session starts ===========
+  collected 1 item
 
-    apps/MyApp/tests.py .                               [100%]
+  apps/MyApp/tests.py .                               [100%]
 
-    ==================== 1 passed in 0.03s ===========
-    ```
+  ==================== 1 passed in 0.03s ===========
+  ```
 
 - We can skip some test cases or mark them as expected fail.
 
-    ```python
-    import pytest
+  ```python
+  import pytest
 
-    @pytest.mark.skip
-    def test_example2():
-        print("Inside string test")
-        assert 'Hi' == 'Hi'
+  @pytest.mark.skip
+  def test_example2():
+      print("Inside string test")
+      assert 'Hi' == 'Hi'
 
-    @pytest.mark.xfail
-    def test_example1():
-        assert 1 == 1
+  @pytest.mark.xfail
+  def test_example1():
+      assert 1 == 1
 
-    @pytest.mark.xfail
-    def test_example3():
-        assert 1 == 2
-    ```
+  @pytest.mark.xfail
+  def test_example3():
+      assert 1 == 2
+  ```
 
-    ```bash
-    (Learn-PyTest)  src : pytest
-    =================== test session starts ==============
-    collected 3 items                                         
+  ```bash
+  (Learn-PyTest)  src : pytest
+  =================== test session starts ==============
+  collected 3 items
 
-    apps/MyApp/tests.py sXx                        [100%]
+  apps/MyApp/tests.py sXx                        [100%]
 
-    ======== 1 skipped, 1 xfailed, 1 xpassed in 0.08s =====
-    ```
+  ======== 1 skipped, 1 xfailed, 1 xpassed in 0.08s =====
+  ```
 
-    **xfailed** : expected to fail  
-    **xpassed**: exceptionally pass
+  **xfailed** : expected to fail  
+   **xpassed**: exceptionally pass
 
 - Put custom marker in `pytest.ini` file
 
-    ```ini
-    [pytest]
-    DJANGO_SETTINGS_MODULE = MyProject.settings
-    # -- recommended but optional:
-    python_files = tests.py test_*.py *_tests.py
+  ```ini
+  [pytest]
+  DJANGO_SETTINGS_MODULE = MyProject.settings
+  # -- recommended but optional:
+  python_files = tests.py test_*.py *_tests.py
 
-    markers = 
-        slow: slow running test
-    ```
+  markers =
+      slow: slow running test
+  ```
 
-    Under marker a marker (**slow**) with description (**slow running test**). Now we can use this marker to run only those test cases which are marked with this marker.
+  Under marker a marker (**slow**) with description (**slow running test**). Now we can use this marker to run only those test cases which are marked with this marker.
 
-    ```python
-    import pytest
+  ```python
+  import pytest
 
-    @pytest.mark.slow
-    def test_example1():
-        assert 1 == 1
+  @pytest.mark.slow
+  def test_example1():
+      assert 1 == 1
 
-    def test_example2():
-        assert 2 == 2
-    ```
+  def test_example2():
+      assert 2 == 2
+  ```
 
-    ```bash
-    (Learn-PyTest)  src : pytest -m "slow"
-    ================ test session starts =================
-    collected 3 items / 2 deselected / 1 selected        
+  ```bash
+  (Learn-PyTest)  src : pytest -m "slow"
+  ================ test session starts =================
+  collected 3 items / 2 deselected / 1 selected
 
-    apps/MyApp/tests.py .                          [100%]
+  apps/MyApp/tests.py .                          [100%]
 
-    ========== 1 passed, 2 deselected in 0.04s ===========
-    ```
+  ========== 1 passed, 2 deselected in 0.04s ===========
+  ```
 
 ## States of Fixtures and Factories
 
-1. Arrange  - prepare everything for our test
-2. Act      - state-changing action that kicks off the behavior we want to test
-3. Assert   - where we look at that resulting state and check if it looks how we’d expect
-4. CleanUp  - where the test clean up after execution, so other tests aren’t being accidentally influenced by it.
+1. Arrange - prepare everything for our test
+2. Act - state-changing action that kicks off the behavior we want to test
+3. Assert - where we look at that resulting state and check if it looks how we’d expect
+4. CleanUp - where the test clean up after execution, so other tests aren’t being accidentally influenced by it.
 
 ### Fixtures
 
 - **Fixtures**: they are used to feed data to the tests such as databases connections, URLs or input data. Fixtures can be used at start and end of the test.
 - Fixture can be defined in 4 ways.
-  
-  - **Function**:   Run once per test
-  - **Class**:      Run once per class of test
-  - **Module**:     Run once per module
-  - **Session**:    Run once per session
+
+  - **Function**: Run once per test
+  - **Class**: Run once per class of test
+  - **Module**: Run once per module
+  - **Session**: Run once per session
 
 ```python
 # fixture with scope of function (default)
@@ -457,7 +457,7 @@ def new_user_factory(db):
     def create_app_user(
         username: str,
         password: str = None,
-        first_name: str = "firstname", 
+        first_name: str = "firstname",
         last_name: str = "lastname",
         email: str = "user@email.com",
         is_staff: bool = False,
@@ -496,7 +496,7 @@ def test_create_user_factory(create_new_user):
 ```
 
 ```bash
-collected 1 item                                  
+collected 1 item
 
 apps/MyApp/tests/test_10.py .               [100%]
 
@@ -619,7 +619,7 @@ Meghan Johnson
 import  pytest
 from django.contrib.auth.models import User
 
-# we can check the obj we create using factory 
+# we can check the obj we create using factory
 # is actually got saved into User table
 @pytest.mark.django_db
 def test_new_user(user_factory):
@@ -637,3 +637,124 @@ Ryan Hubbard
 
 Instead creating user in test case we prefer to introduce fixture here.
 
+```python
+# update conftest.py
+import pytest
+
+from pytest_factoryboy import register
+from .factory import UserFactory
+
+# now fixture will access this factory as user_factory
+register(UserFactory)
+
+# use a fixture to access datanase while using
+# factory and prepare data for test
+@pytest.fixture
+def create_user(db, user_factory):
+    user = user_factory.create()
+    return user
+```
+
+```python
+import  pytest
+from django.contrib.auth.models import User
+
+def test_new_user(create_user):
+    user = create_user
+    print(User.objects.count())
+    print(user.username)
+    assert True
+```
+
+```bash
+apps/FactoryApp/Tests/test_1.py .           [ 50%]
+apps/FactoryApp/Tests/test_2.py .           [100%]
+
+===================== PASSES ======================
+__________________ test_new_user __________________
+-------------- Captured stdout call ---------------
+1
+Vincent Page
+__________________ test_new_user __________________
+-------------- Captured stdout call ---------------
+1
+Vincent Page
+================ 2 passed in 0.25s ================
+```
+
+A more advanced use of factory is when model have foreign key dependency of each other. Let consider a Product model which refer to Category model. Then our factory will looks something like.
+
+```python
+class CategoryFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Category
+
+    name = 'django'
+
+
+class  ProductFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Product
+
+    title = "product_title"
+    category = factory.SubFactory(CategoryFactory)
+    description = fake.text()
+    slug = "product_slug"
+    regular_price = 9.99
+    discount_price = 4.99
+```
+
+Register the factories in conftest.py
+
+```python
+import pytest
+from pytest_factoryboy import register
+from .factory import ProductFactory, CategoryFactory
+
+# now fixture will access this factory as user_factory
+register(ProductFactory)
+register(CategoryFactory)
+```
+
+```python
+import pytest
+
+def test_product_creation(product_factory):
+    product = product_factory.build()
+    print(product.description)
+    print(product.category)
+    assert True
+```
+
+```bash
+===================== PASSES =====================
+_____________ test_product_creation ______________
+-------------- Captured stdout call --------------
+Young soon support assume score. Task force energy financial if push town.
+django
+=============== 1 passed in 0.06s ================
+```
+
+In case we need `create` instead of `build`. `create` make entry to test database and not actual database. The obj which gets saved remains in test db until all test runs.
+
+```python
+import pytest
+from apps.FactoryApp.models import Product
+
+def test_product_creation(db, product_factory):
+    product = product_factory.create()
+    print(product.description)
+    print(product.category)
+    print(Product.objects.count())
+    assert True
+```
+
+```bash
+_____________ test_product_creation ______________
+-------------- Captured stdout call --------------
+Enough involve talk head address. Feeling early trial resource. Capital writer finally give culture green field oil.
+Protect career course can anyone. Ago space discuss old.
+django
+1
+=============== 1 passed in 0.29s ================
+```

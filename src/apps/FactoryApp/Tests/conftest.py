@@ -1,6 +1,16 @@
 import pytest
 
 from pytest_factoryboy import register
-from .factory import UserFactory
+from .factory import UserFactory, ProductFactory, CategoryFactory
 
-register(UserFactory)	# now fixture to access this factory is user_factory
+# now fixture will access this factory as user_factory
+register(UserFactory)	
+register(ProductFactory)
+register(CategoryFactory)
+
+# use a fixture to access datanase while using 
+# factory and prepare data for test
+@pytest.fixture
+def create_user(db, user_factory):
+	user = user_factory.create()
+	return user
