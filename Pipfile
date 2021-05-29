@@ -8,6 +8,7 @@ django = "*"
 python-decouple = "*"
 pytest-factoryboy = "*"
 faker = "*"
+djangorestframework = "*"
 
 [dev-packages]
 pipenv = "*"

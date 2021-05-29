@@ -9,6 +9,7 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 - PyTest
 - PyTest-Factory Boy
 - Faker
+- Django REST Framework
 
 ## Index
 
@@ -19,6 +20,7 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
    2.3 [conftest.py file](#`conftest.py`---making-fixture-common-for-several-modules)  
    2.4 [Factory](#factory-as-a-fixture)
 3. [Factory Boy and Faker](#factory-boy-and-faker)
+4. [Parametrizing Test](#parametrizing-fixtures-and-test-functions)  
 
 ## Resources and Credits
 
@@ -33,6 +35,11 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 - Install packages in production `pipenv install --ignore-pipfile`
 - Install dev packages using `pipenv install --dev`
 - Install pytest for django using `pipenv install --dev pytest-django`
+- To create new app in nested folder user. (do not put trailing / after end of path )
+
+    ```bash
+    (Learn-PyTest)  src : ./manage.py startapp RegisterUser apps/RegisterUser
+    ```
 
 ## PyTest
 
@@ -563,7 +570,8 @@ Julie Arnold
 ================= 1 passed in 0.06s ==================
 ```
 
-Here we created user but we don't add this user to database hence we are not required to add any decorator of pytest to test function. Do repeat this we can use `build` option of factory.
+Here we created user but we don't add this user to database hence we are not required to add any decorator of pytest to test function. Do repeat this we can use `build` option of factory. `create` make entry to test database and not actual database. The obj which gets saved remains in test db until all test runs.
+`create` is better as it gives error if obj created cannot be saved to database may be due to foreign key constraint or not null constraint.
 
 ```python
 import  pytest
@@ -594,9 +602,7 @@ def test_new_user(user_factory):
     assert True
 ```
 
-We can remove the error by one of the following ways (first is prefered)
-
-Here we use only build thus the object do not gets into database.
+We can remove the error by one of the following ways (first is prefered). Till now we use only `build` thus the object do not gets into database but using `create` we can save them into test database.
 
 ```python
 import  pytest
@@ -735,8 +741,6 @@ django
 =============== 1 passed in 0.06s ================
 ```
 
-In case we need `create` instead of `build`. `create` make entry to test database and not actual database. The obj which gets saved remains in test db until all test runs.
-
 ```python
 import pytest
 from apps.FactoryApp.models import Product
@@ -757,4 +761,129 @@ Protect career course can anyone. Ago space discuss old.
 django
 1
 =============== 1 passed in 0.29s ================
+```
+
+## Parametrizing Fixtures and Test functions
+
+Provide data to be passed to test in parameters itself. For each new parameter a new database is created and one test run do not interfer another one.
+
+```python
+import pytest
+from apps.FactoryApp.models import Product
+
+
+@pytest.mark.parametrize(
+    "title, category, description, slug, regular_price, discount_price, validity",
+    [
+        ("NewProduct1", 1, "NewDesc", "slug", 2.99, 5.99, True),
+        ("", 1, "NewDesc", "slug", 2.99, 5.99, True),
+        # ("NewProduct3", 0, "NewDesc", "slug", 2.99, 5.99, False),      # can't test as None can't be given in Foreign Key
+        ("NewProduct4", 1, "", "slug", 2.99, 5.99, True),
+        ("NewProduct5", 1, "NewDesc", "", 2.34, 5.99, True),
+        # ("NewProduct6", 1, "NewDesc", "slug", 2.99, None, False)            # Can't give none in float field
+    ]
+)
+def test_product_instance(
+    db,                     # to access database
+    product_factory,        # to access factory
+    title,
+    category,
+    description,
+    slug,
+    regular_price,
+    discount_price,
+    validity
+):
+    test = product_factory(
+        title=title,
+        category_id=category,
+        description=description,
+        slug=slug,
+        regular_price=regular_price,
+        discount_price=discount_price,
+    )
+
+    item = Product.objects.count()
+    print(item)
+    assert item == validity
+```
+
+```bash
+============================= PASSES =============================
+_ test_product_instance[NewProduct1-1-NewDesc-slug-2.99-5.99-True] _
+---------------------- Captured stdout call ----------------------
+1
+_____ test_product_instance[-1-NewDesc-slug-2.99-5.99-True] ______
+---------------------- Captured stdout call ----------------------
+1
+___ test_product_instance[NewProduct4-1--slug-2.99-5.99-True] ____
+---------------------- Captured stdout call ----------------------
+1
+__ test_product_instance[NewProduct5-1-NewDesc--2.34-5.99-True] __
+---------------------- Captured stdout call ----------------------
+1
+======================= 4 passed in 0.29s ========================
+```
+
+But notice we can't test API's of some input for which data is invalid like `pk` of `Category` which do not exists. So we will use `client` to make this request. This `client` request can be made on django forms or API's.
+
+- We made a `not null` restriction on `slug` field of `Product` and it is available on `api/product/`.
+
+```python
+import pytest
+
+
+@pytest.mark.parametrize(
+    "title, category, description, slug, regular_price, discount_price, validity",
+    [
+        ("Netflix", 3, "New Series", "", 50.99, 45.99, 400),
+        ("Netflix", 3, "New Series", "netflix", "", 45.99, 400),
+    ]
+)
+@pytest.mark.django_db
+def test_product_instance(
+    client,    # client to make request
+    title,
+    category,
+    description,
+    slug,
+    regular_price,
+    discount_price,
+    validity
+):
+    response = client.post(
+        '/api/product/',
+        data = {
+            'title': title,
+            'category': category,
+            'description': description,
+            'slug': slug,
+            'regular_price': regular_price,
+            'discount_price': discount_price,
+        }
+    )
+
+    print(response.status_code)
+    print(response.data)
+
+    assert response.status_code == validity
+```
+
+Lets see the response
+
+```bash
+============================ PASSES =============================
+_ test_product_instance[Netflix-3-New Series--50.99-45.99-400] __
+--------------------- Captured stdout call ----------------------
+400
+{'slug': [ErrorDetail(string='This field may not be blank.', code='blank')], 'category': [ErrorDetail(string='Invalid pk "3" - object does not exist.', code='does_not_exist')]}
+----------------------- Captured log call -----------------------
+WARNING  django.request:log.py:224 Bad Request: /api/product/
+_ test_product_instance[Netflix-3-New Series-netflix--45.99-400] _
+--------------------- Captured stdout call ----------------------
+400
+{'regular_price': [ErrorDetail(string='A valid number is required.', code='invalid')], 'category': [ErrorDetail(string='Invalid pk "3" - object does not exist.', code='does_not_exist')]}
+----------------------- Captured log call -----------------------
+WARNING  django.request:log.py:224 Bad Request: /api/product/
+======================= 2 passed in 0.31s =======================
 ```
