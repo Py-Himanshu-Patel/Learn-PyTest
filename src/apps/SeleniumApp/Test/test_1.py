@@ -11,4 +11,3 @@ class AdminTest(LiveServerTestCase):
 		driver.get(f"{self.live_server_url}/admin/")
 		# check if 'Log in | Django site admin' is present in page title
 		assert  "Log in | Django site admin" in driver.title
-

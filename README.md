@@ -31,6 +31,8 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 
 ## Setup
 
+- To run all test `src $ : pytest`
+- To run a specific test `src $ pytest apps/SeleniumApp/Test/test_2.py::BrowserTest`
 - Load `.env` using `pipenv shell`. Then start django app.
 - Install `pytest` as dev package. `pipenv install --dev pytest`
 - Update Pipfile.lock `pipenv lock`
@@ -919,3 +921,110 @@ class AdminTest(LiveServerTestCase):
 
 ```
 
+Another way to do the same without opening a browser window is to use `headless` flag.
+
+```python
+import pytest
+from django.test import LiveServerTestCase
+from selenium import webdriver
+
+
+class BrowserTest(LiveServerTestCase):
+    def test_headless(self):
+        options = webdriver.ChromeOptions()
+        options.headless = True
+        driver = webdriver.Chrome(
+            executable_path=r"./chromedriver",
+            options=options
+        )
+        driver.get(f"{self.live_server_url}/admin/")
+        assert "Log in | Django site admin" in driver.title
+```
+
+Now we can move this chromedriver init code to a fixture with class scope that is it will run one time for each class. How many test method we may call inside that class.
+
+```python
+import pytest
+from selenium import webdriver
+
+
+@pytest.fixture(scope="class")
+def chrome_driver_init(request):
+
+    options = webdriver.ChromeOptions()
+    options.headless = True
+    chrome_driver = webdriver.Chrome(
+        executable_path="./chromedriver",
+        options=options
+    )
+    request.cls.driver = chrome_driver
+    yield 
+    chrome_driver.close()
+```
+
+Note in below code we access driver using `self` and not directly.
+
+```bash
+import pytest
+from django.test import LiveServerTestCase
+
+
+@pytest.mark.usefixtures("chrome_driver_init")
+class BrowserTest(LiveServerTestCase):
+    def test_admin_page(self):
+        # the driver we access using self is headless already
+        # conftest.py file run before any test hence update the 
+        # driver attribute of class 
+        self.driver.get(f"{self.live_server_url}/admin/")
+        assert "Log in | Django site admin" in self.driver.title
+```
+
+Also we can make a generic fixture for chrome and firefox both. This will check the web page for both the browsers.
+
+```python
+# conftest.py
+
+# a more generic fixture can be used for both chrome as well firefox
+@pytest.fixture(params=["chrome", "firefox"], scope="class")
+def driver_init(request):
+    if request.params == "chrome":
+        options = webdriver.ChromeOptions()
+        options.headless = True
+        web_driver = webdriver.Chrome(
+            executable_path="./chromedriver",
+            options=options
+        )
+    if request.params == "firefox":
+        options = webdriver.FirefoxOptions()
+        options.headless = True
+        web_driver = webdriver.Firefox(
+            executable_path="./chromedriver",
+            options=options
+        )
+    request.cls.driver = web_driver
+    yield 
+    web_driver.close()
+```
+
+```python
+# test_4.py
+import pytest
+
+
+@pytest.mark.usefixtures("driver_init")
+class TestAdminPage:
+    # instead of live_server_url from django test class we use
+    # live_server from webdriver 
+    def test_admin_page(self, live_server):
+        self.driver.get(f"{live_server.url}/admin/")
+        assert "Log in | Django site admin" in self.driver.title
+```
+
+See the test getting passed in both the browser conditions.
+
+```bash
+collected 2 items                                 
+
+apps/SeleniumApp/Test/test_4.py::TestAdminPage::test_admin_page[chrome] PASSED [ 50%]
+apps/SeleniumApp/Test/test_4.py::TestAdminPage::test_admin_page[firefox] PASSED [100%]
+```
