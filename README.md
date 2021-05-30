@@ -987,18 +987,18 @@ Also we can make a generic fixture for chrome and firefox both. This will check 
 # a more generic fixture can be used for both chrome as well firefox
 @pytest.fixture(params=["chrome", "firefox"], scope="class")
 def driver_init(request):
-    if request.params == "chrome":
+    if request.param == "chrome":
         options = webdriver.ChromeOptions()
         options.headless = True
         web_driver = webdriver.Chrome(
             executable_path="./chromedriver",
             options=options
         )
-    if request.params == "firefox":
+    if request.param == "firefox":
         options = webdriver.FirefoxOptions()
         options.headless = True
         web_driver = webdriver.Firefox(
-            executable_path="./chromedriver",
+            executable_path="./geckodriver",
             options=options
         )
     request.cls.driver = web_driver
@@ -1030,6 +1030,42 @@ apps/SeleniumApp/Test/test_4.py::TestAdminPage::test_admin_page[firefox] PASSED 
 ```
 
 ## Take screenshot with selenium while testing
+
+```python
+# fixture to run for each type of ss
+@pytest.fixture(params=["chrome1980", "chrome411", "firefox"], scope="class")
+def driver_init_screenshot(request):
+    if request.param == "chrome1980":
+        options = webdriver.ChromeOptions()
+        options.headless = True
+        options.add_argument("--window-size=1920,1080")
+        web_driver = webdriver.Chrome(
+            executable_path="./chromedriver",
+            options=options
+        )
+        request.cls.browser = "Chrome1920x1080"
+    if request.param == "chrome411":
+        options = webdriver.ChromeOptions()
+        options.headless = True
+        options.add_argument("--window-size=411,823")
+        web_driver = webdriver.Chrome(
+            executable_path="./chromedriver",
+            options=options
+        )
+        request.cls.browser = "Chrome411x823"
+    if request.param == "firefox":
+        options = webdriver.FirefoxOptions()
+        options.headless = True
+        web_driver = webdriver.Firefox(
+            executable_path="./geckodriver",
+            options=options
+        )
+        request.cls.browser = "Firefox"
+
+    request.cls.driver = web_driver
+    yield 
+    web_driver.close()
+```
 
 ```python
 import os
