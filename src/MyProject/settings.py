@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'apps.MyApp',
     'apps.FactoryApp',
     'apps.SeleniumApp',
+    # 'apps.Payment'
 ]
 
 MIDDLEWARE = [

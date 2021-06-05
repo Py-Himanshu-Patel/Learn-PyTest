@@ -33,7 +33,7 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 
 - To run all test `src $ : pytest`
 - To run a specific test `src $ pytest apps/SeleniumApp/Test/test_2.py::BrowserTest`
-- Load `.env` using `pipenv shell`. Then start django app.
+- Load `.env` using `pipenv shell`. To load the env variables from `.env` file.
 - Install `pytest` as dev package. `pipenv install --dev pytest`
 - Update Pipfile.lock `pipenv lock`
 - Install packages in production `pipenv install --ignore-pipfile`
@@ -1103,3 +1103,55 @@ apps/SeleniumApp/Test/test_5.py::TestScreenshot::test_screenshot_admin[chrome198
 apps/SeleniumApp/Test/test_5.py::TestScreenshot::test_screenshot_admin[chrome411] PASSED [ 66%]
 apps/SeleniumApp/Test/test_5.py::TestScreenshot::test_screenshot_admin[firefox] PASSED [100%]
 ```
+
+## Payment: Unit, Integration and End-to-End testing
+
+### Benefits and point to remember
+
+- Have fast enough tests for both efficient code-and-test flows for developers and for CI/CD pipelines.
+- Have comprehensive enough tests to isolate what breaks in the piece of code and what breaks in external/internal code the code we are testing depends on.
+- Leave a clear set of useful tools to pinpoint relevant individual or multiple tests resulting in a rocket-fast workflow for the developer.
+
+### How to structure tests
+
+```bash
+...
+├── tests
+│   ├── __init__.py
+│   ├── test_app1
+│   │   ├── __init__.py
+│   │   ├── conftest.py
+│   │   ├── factories.py
+│   │   ├── e2e_tests.py
+│   │   ├── test_models.py
+│   │   ├── test_signals.py
+│   │   ├── test_serializers.py
+│   │   ├── test_utils.py
+│   │   ├── test_views.py
+│   │   └── test_urls.py
+│   │
+│   └── ...
+└── ...
+```
+
+### PyTest Settings
+
+PyTest settings configurations can be set in `pytest.ini` files under `[pytest]` or in `setup.cfg` files under `[tool:pytest]`:
+
+```bash
+:in pytest.ini
+[pytest]
+DJANGO_SETTINGS_MODULE = ...
+markers = ...
+python_files = ...
+addopts = ...
+
+:in setup.cfg
+[tool:pytest]
+DJANGO_SETTINGS_MODULE = ...
+markers = ...
+python_files = ...
+addopts = ...
+```
+
+From now we are using `setup.cfg` and not `pytest.ini`.
