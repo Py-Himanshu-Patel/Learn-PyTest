@@ -11,6 +11,8 @@ faker = "*"
 djangorestframework = "*"
 selenium = "*"
 django-hashid-field = "==1.0.0"
+pytest-cov = "*"
+model-bakery = "*"
 
 [dev-packages]
 pipenv = "*"

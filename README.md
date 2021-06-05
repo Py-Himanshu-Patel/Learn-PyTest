@@ -11,6 +11,8 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 - Faker
 - Django REST Framework
 - Selenium
+- pytest-cov
+- model-bakery
 
 ## Index
 
@@ -23,6 +25,7 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 3. [Factory Boy and Faker](#factory-boy-and-faker)
 4. [Parametrizing Test](#parametrizing-fixtures-and-test-functions)  
 5. [Pytest in Selenium](#intro-to-selenium)
+6. [Pytest with Unit, Integration and End to End tests](#payment-unit-integration-and-end-to-end-testing)
 
 ## Resources and Credits
 
@@ -1142,18 +1145,249 @@ PyTest settings configurations can be set in `pytest.ini` files under `[pytest]`
 :in pytest.ini
 [pytest]
 [tool:pytest]
+[tool:pytest]
 DJANGO_SETTINGS_MODULE = MyProject.settings
 markers = slow: slow running test
 python_files = tests.py test_*.py *_tests.py
-addopts = ...
+addopts = --cov=tests/ --cov-report html
 
 :in setup.cfg
 [tool:pytest]
 [tool:pytest]
+[tool:pytest]
 DJANGO_SETTINGS_MODULE = MyProject.settings
 markers = slow: slow running test
 python_files = tests.py test_*.py *_tests.py
-addopts = ...
+addopts = --cov=tests/ --cov-report html
 ```
 
-From now we are using `setup.cfg` and not `pytest.ini`.
+From now we are using `setup.cfg` and not `pytest.ini`. As `pytest.ini` only usefull for pytest while `setup.cfg` is usefull for various types of plugins.
+
+- `DJANGO_SETTINGS_MODULE`: indicates where in the working dir are the settings located.
+- `python_files`: indicates the patterns pytest will use to match test files.
+- `addopts`: indicates the command line arguments pytest should run with whenever we run pytest .
+- `markers`: here we define the markers we and our team may later agree to use for categorizing tests (i.e: "unit", "integration", "e2e", "regression", etc.).
+
+### Types of Tests
+
+- `Unit Tests`: test of a relevant piece of code isolated (mostly by mocking external code to the code tested) from interactions with other units of code. Be it internal code like a helper function we made to clean the code, a call to the database or a call to an external API.
+- `Integration Tests`: tests that test a piece of code without isolating them from interactions with other units.
+- `e2e Tests`: e2e stands for “end to end”, this tests are integration tests that test the end to end flows of the Django app we are testing.
+- `Regression Tests`: a kind of test that, be it integration or unit, was originated by a bug that was covered right after fixing it by a test to expect it in the future.
+
+### A Proper Test Flow
+
+There are two main code testing flows for testing developers:
+
+- `TDD (Test Driven Development)`: making tests before asserting them through code.
+- `Testing after developing`: testing the piece of code right after creating it.
+
+But I’ll recommend a mix of them:
+
+- `Make end-to-end tests`: this should be the TDD component of our final test-suite. This tests will help you first and foremost to layout beforehand what each endpoint should return, and to have a preliminary vission of how the rest of the code of your app should follow.
+- `Create Unit Tests`: write code and create the isolated tests for each of the parts of the Django app. This will not only help the developer through the development process but will also be extremely helpful to pinpoint where the problem is happening.
+
+The only `integration tests` in our test suite should be the e2e ones. This tests should not be part of our team's testing flow while developing and, given integration tests take time, this should not even form part of the CI/CD pipeline we set up.
+
+### What should I test in my unit tests?
+
+Models should only be used for data representation. The logic we may need for a model should be stored in either signals or model managers. Thus we don't test models in unit testing.
+
+Since we are avoiding database access for our main tests, we'll leave the job of making sure we built our models correctly to the e2e tests.
+
+Thus a unit test could be of a:
+
+- Model (model methods/model managers)
+- Signal
+- Serializer
+- Helper Object a.k.a "utils" (functions, classes, method, etc.)
+- View/Viewset
+- URL Configuration
+
+## Common Testing Utilities
+
+### Markers
+
+Markers are just decorators with the format `@pytest.mark.<marker>` we set wrapping our test functions.
+
+- `@pytest.mark.parametrize()`: this marker will be used to run the same test several times with different values, working as a for loop.
+- `@pytest.mark.django_db`: if we don’t give a test access to the db, it will by default not be able to access the db.
+
+### Mocking
+
+When making unit tests, we will want to mock access to external APIs, to the db and to internal code. That’s where the following libraries will be helpful:
+
+- `pytest-mock`: to provide `unittest.mock` objects like a mock object and a non invasive patch function through the mocker fixture.
+- `requests-mock` : to provide a requests factory through the `rf` fixture and also the ability to mock requests objects.
+- `django-mock-queries`: provides the ability to mock a queryset object and fill it with non persistend object instances.
+
+### PyTest Commands
+
+- `-k <expression>`: matches a file, class or function name inside the tests folder that contains the indicated expression. Below test run only `test_6.py` from MyApp.
+
+  ```bash
+  pytest -k 'create1'
+  ```
+
+- `-m <marker>`: will run all tests with the inputed marker.
+
+- `-m "not <marker>"`: will run all tests that don’t have the inputed marker.
+
+  ```bash
+  pytest -m "slow"
+  pytest -m "not slow"
+  ```
+
+- `-x`: stops running tests suit as soon one test fails.
+
+- `--lf`: starts running the test suite from the last failed test, perfect to avoid continiously running tests we already know pass when debuggin.
+
+- `-vv`: shows a more detailed version of a failed assertion.
+
+- `--cov`: show % of tests covered by tests (depends on `pytest-cov` plugin).
+
+- `--reruns <num_of_reruns>`: used for dealing with flaky tests, tests that fail when run in the test suite but pass when run alone.
+
+#### Coverage
+
+The complete list of command line options is:
+
+`--cov=PATH`
+Measure coverage for filesystem path. (multi-allowed)
+
+`--cov-report=type`
+Type of report to generate: term, term-missing, annotate, html, xml (multi-allowed). term, term- missing may be followed by `:skip-covered`. annotate, html and xml may be followed by `:DEST` where DEST specifies the output location. Use `–cov-report=` to not generate any output.
+
+`--cov-config=path`
+Config file for coverage. Default: .coveragerc
+
+`--no-cov-on-fail`
+Do not report coverage if test run fails. Default: False
+
+`--no-cov`
+Disable coverage report completely (useful for debuggers). Default: False
+
+`--cov-fail-under=MIN`
+Fail if the total coverage is less than MIN.
+
+`--cov-append`
+Do not delete coverage but append to current. Default: False
+
+`--cov-branch`
+Enable branch coverage.
+
+`--cov-context`
+Choose the method for setting the dynamic context.
+
+### Addopts
+
+Addopts are PyTest commands that will want to run every time we run the `pytest` command so we don't have to input it every time.
+
+```conf
+DJANGO_SETTINGS_MODULE = ...
+markers = ...
+python_files = ...
+addopts = -vv -x --lf --cov
+```
+
+### Pinpoint Tests
+
+If we want to instead run a set of tests with something in common, we can run pytest using the `-k` command to select all `test_*.py` files, all `Test*` classes or all `test_*` functions with the inserted expression.
+A good way to group tests, is to set custom markers in our `pytest.ini/setup.cfg`file and share the markers across our team.
+
+```conf
+[tool:pytest]
+markers =
+    # Define our new marker
+    unit: tests that are isolated from the db, external api calls and other mockable internal code.
+```
+
+we can mark it like this:
+
+```python
+import pytest
+
+@pytest.mark.unit
+def test_something(self):
+    pass
+```
+
+we can avoid the tediousity of making a marker for each function by setting a global marker for all the file by declaring the pytestmark variable in the top of the file right after the imports, which will contain a singular pytest marker or a list of markers:
+
+```python
+# (imports)
+
+# Only one global marker (most commonly used)
+pytestmark = pytest.mark.unit
+# Several global markers
+pytestmark = [pytest.mark.unit, pytest.mark.other_criteria]
+
+# (tests)
+```
+
+If we want to go further and set a global marker for all the tests, pytest creates a fixtures called items that represents all PyTest test objects inside the containing directory. marker `all` here
+
+```conf
+# in conftest.py
+def pytest_collection_modifyitems(items):
+    for item in items:
+        item.add_marker('all')
+```
+
+### Factories
+
+Factories are pre-filled model instances. Instead of manually making model instances by hand, factories will do the work for us. The main modules for creating factories are `factory_boy` and `model_bakery`.
+
+Instances that are saved into the db are called `persistent instances` in contrast with `non persistent`, which are the ones we will use to mock the response of database calls.
+
+```python
+from model_bakery import baker
+
+from apps.my_app.models import MyModel
+
+# create and save to the database
+baker.make(MyModel) # --> One instance
+baker.make(MyModel, _quantity=3) # --> Batch of 3 instances
+
+# create and don't save
+baker.prepare(MyModel) # --> One instance
+baker.prepare(MyModel, _quantity=3) # --> Batch of 3 instances
+```
+
+If we want to have other than random data we can write factories with `factory_boy` and `faker` in the following way:
+
+```python
+# factories.py
+import factory
+from faker import Faker
+fake = Faker()
+from apps.Payment.models import Currency
+
+
+class CurrencyFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Currency
+    name, code = fake.currency()
+
+CurrencyFactory()
+
+# Save to db
+CurrencyFactory() # --> One instance
+CurrencyFactory.create_batch(3) # --> Batch of 3 instances
+
+# Do not save to db
+CurrencyFactory.build() # --> One instance
+CurrencyFactory.build_batch() # --> Batch of 3 instances
+```
+
+### How to Organize a Test
+
+- `Arrange`: set everything needed for the test
+- `Mock`: mock everything needed to isolate your test
+- `Act`: trigger your code unit.
+- `Assert`: assert the outcome is exactly as expected to avoid any unpleasant surprises later.
+
+### Test Examples
+
+And inside `tests/test_app/conftest.py` we'll set our factories as fixtures to later access them as a param in our test functions.
+
