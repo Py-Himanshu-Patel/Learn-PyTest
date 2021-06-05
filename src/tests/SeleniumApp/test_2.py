@@ -3,6 +3,7 @@ from django.test import LiveServerTestCase
 from selenium import webdriver
 
 
+@pytest.mark.skip
 class BrowserTest(LiveServerTestCase):
     def test_headless(self):
         options = webdriver.ChromeOptions()

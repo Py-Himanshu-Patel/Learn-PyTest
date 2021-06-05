@@ -2,6 +2,7 @@ import pytest
 from django.test import LiveServerTestCase
 
 
+@pytest.mark.skip
 @pytest.mark.usefixtures("chrome_driver_init")
 class BrowserTest(LiveServerTestCase):
     def test_admin_page(self):

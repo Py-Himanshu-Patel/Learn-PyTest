@@ -17,6 +17,7 @@ def take_screenshot(driver, name):
     )
 
 
+@pytest.mark.skip
 @pytest.mark.usefixtures("driver_init_screenshot")
 class TestScreenshot:
     def test_screenshot_admin(self, live_server):

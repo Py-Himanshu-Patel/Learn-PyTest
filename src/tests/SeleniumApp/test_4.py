@@ -1,6 +1,7 @@
 import pytest
 
 
+@pytest.mark.skip
 @pytest.mark.usefixtures("driver_init")
 class TestAdminPage:
     # instead of live_server_url from django test class we use

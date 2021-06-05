@@ -2,7 +2,7 @@ import pytest
 from django.test import LiveServerTestCase
 from selenium import webdriver
 
-
+@pytest.mark.skip
 class AdminTest(LiveServerTestCase):
 	def test_admin_page(self):
 		# locate the chromedriver (relative to root/manage.py of project )
