@@ -1,8 +1,9 @@
 import json
 import pytest
+import pprint
 
-from .factory import CurrencyFactory
-from apps.Payment.models import Currency
+from .factory import CurrencyFactory, TransactionFactory
+from apps.Payment.models import Currency, Transaction
 
 # applying universal marker
 pytestmark = pytest.mark.django_db
@@ -130,117 +131,122 @@ class TestCurrencyEndpoints:
 
 class TestTransactionEndpoints:
 
-    endpoint = '/api/transactions/'
+    endpoint = '/api/transaction/'
 
-    # def test_list(self, api_client, utbb):
-    #     client = api_client()
-    #     utbb(3)
-    #     url = self.endpoint
-    #     response = client.get(url)
+    def test_list(self, api_client):
+        client = api_client()
+        assert Transaction.objects.count() == 0
 
-    #     assert response.status_code == 200
-    #     assert len(json.loads(response.content)) == 3
+        TransactionFactory.create_batch(3)
+        url = self.endpoint
+        response = client.get(url)
 
-    # def test_create(self, api_client, utbb):
-    #     client = api_client()
-    #     t = utbb(1)[0]
-    #     valid_data_dict = {
-    #         'amount_in_cents': t.amount_in_cents,
-    #         'currency': t.currency.code,
-    #         'name': t.name,
-    #         'email': t.email,
-    #         'message': t.message
-    #     }
+        assert response.status_code == 200
+        assert len(json.loads(response.content)) == 3
 
-    #     url = self.endpoint
+    def test_create(self, api_client):
+        client = api_client()
+        assert Transaction.objects.count() == 0
 
-    #     response = client.post(
-    #         url,
-    #         valid_data_dict,
-    #         format='json'
-    #     )
+        t = TransactionFactory.create()
 
-    #     assert response.status_code == 201
-    #     assert json.loads(response.content) == valid_data_dict
-    #     assert Transaction.objects.last().link
+        valid_data_dict = {
+            'currency': t.currency.code,
+            'name': t.name,
+            'email': t.email,
+            'message': t.message
+        }
 
-    # def test_retrieve(self, api_client, ftb):
-    #     t = ftb()
-    #     t = Transaction.objects.last()
-    #     expected_json = t.__dict__
-    #     expected_json['link'] = t.link
-    #     expected_json['currency'] = t.currency.code
-    #     expected_json['creation_date'] = expected_json['creation_date'].strftime(
-    #         '%Y-%m-%dT%H:%M:%S.%fZ'
-    #     )
-    #     expected_json.pop('_state')
-    #     expected_json.pop('currency_id')
-    #     url = f'{self.endpoint}{t.id}/'
+        url = self.endpoint
 
-    #     response = api_client().get(url)
+        response = client.post(
+            url,
+            valid_data_dict,
+            format='json'
+        )
 
-    #     assert response.status_code == 200 or response.status_code == 301
-    #     assert json.loads(response.content) == expected_json
+        assert response.status_code == 201
+        assert json.loads(response.content) == valid_data_dict
+        assert Transaction.objects.last().link
 
-    # def test_update(self, api_client, utbb):
-    #     old_transaction = utbb(1)[0]
-    #     t = utbb(1)[0]
-    #     expected_json = t.__dict__
-    #     expected_json['id'] = old_transaction.id.hashid
-    #     expected_json['currency'] = old_transaction.currency.code
-    #     expected_json['link'] = Transaction.objects.first().link
-    #     expected_json['creation_date'] = old_transaction.creation_date.strftime(
-    #         '%Y-%m-%dT%H:%M:%S.%fZ'
-    #     )
-    #     expected_json.pop('_state')
-    #     expected_json.pop('currency_id')
+    def test_retrieve(self, api_client):
+        t = TransactionFactory.create()
+        t = Transaction.objects.last()
+        expected_json = t.__dict__
 
-    #     url = f'{self.endpoint}{old_transaction.id}/'
+        expected_json['link'] = t.link
+        expected_json['currency'] = t.currency.code
+        expected_json['uid'] = str(expected_json['uid'])
+        expected_json['creation_date'] = expected_json['creation_date'].strftime(
+            '%Y-%m-%dT%H:%M:%S.%fZ'
+        )
+        expected_json.pop('_state')
+        expected_json.pop('currency_id')
+        url = f'{self.endpoint}{t.id}/'
 
-    #     response = api_client().put(
-    #         url,
-    #         data=expected_json,
-    #         format='json'
-    #     )
+        response = api_client().get(url)
 
-    #     assert response.status_code == 200 or response.status_code == 301
-    #     assert json.loads(response.content) == expected_json
+        assert response.status_code == 200 or response.status_code == 301
+        assert json.loads(response.content) == expected_json
 
-    # @pytest.mark.parametrize('field', [
-    #     ('name'),
-    #     ('billing_name'),
-    #     ('billing_email'),
-    #     ('email'),
-    #     ('amount_in_cents'),
-    #     ('message'),
-    # ])
-    # def test_partial_update(self, api_client, field, utbb):
-    #     utbb(2)
-    #     old_transaction = Transaction.objects.first()
-    #     new_transaction = Transaction.objects.last()
-    #     valid_field = {
-    #         field: new_transaction.__dict__[field],
-    #     }
-    #     url = f'{self.endpoint}{old_transaction.id}/'
+    def test_update(self, api_client):
+        old_transaction = TransactionFactory.create()
+        new_transaction = TransactionFactory.create()
 
-    #     response = api_client().patch(
-    #         path=url,
-    #         data=valid_field,
-    #         format='json',
-    #     )
+        expected_json = new_transaction.__dict__
+        expected_json['uid'] = str(old_transaction.uid)
+        expected_json['id'] = int(old_transaction.id)
+        expected_json['currency'] = old_transaction.currency.code
+        expected_json['link'] = Transaction.objects.first().link
+        expected_json['creation_date'] = old_transaction.creation_date.strftime(
+            '%Y-%m-%dT%H:%M:%S.%fZ'
+        )
+        expected_json.pop('_state')
+        expected_json.pop('currency_id')
 
-    #     assert response.status_code == 200 or response.status_code == 301
-    #     try:
-    #         assert json.loads(response.content)[field] == valid_field[field]
-    #     except json.decoder.JSONDecodeError as e:
-    #         pass
+        url = f'{self.endpoint}{old_transaction.id}/'
 
-    # def test_delete(self, api_client, utbb):
-    #     transaction = utbb(1)[0]
-    #     url = f'{self.endpoint}{transaction.id}/'
+        response = api_client().put(
+            url,
+            data=expected_json,
+            format='json'
+        )
 
-    #     response = api_client().delete(
-    #         url
-    #     )
+        assert response.status_code == 200 or response.status_code == 301
+        assert json.loads(response.content) == expected_json
 
-    #     assert response.status_code == 204 or response.status_code == 301
+    @pytest.mark.parametrize('field', [
+        ('name'),
+        ('email'),
+        ('message'),
+    ])
+    def test_partial_update(self, api_client, field):
+        TransactionFactory.create_batch(2)
+        old_transaction = Transaction.objects.first()
+        new_transaction = Transaction.objects.last()
+        valid_field = {
+            field: str(new_transaction.__dict__[field]),
+        }
+        url = f'{self.endpoint}{old_transaction.id}/'
+
+        response = api_client().patch(
+            path=url,
+            data=valid_field,
+            format='json',
+        )
+
+        assert response.status_code == 200 or response.status_code == 301
+        try:
+            assert json.loads(response.content)[field] == valid_field[field]
+        except json.decoder.JSONDecodeError as e:
+            pass
+
+    def test_delete(self, api_client):
+        transaction = TransactionFactory.create()
+        url = f'{self.endpoint}{transaction.id}/'
+
+        response = api_client().delete(
+            url
+        )
+
+        assert response.status_code == 204 or response.status_code == 301

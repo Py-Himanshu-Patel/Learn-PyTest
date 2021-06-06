@@ -28,5 +28,12 @@ class CurrencyFactory(factory.django.DjangoModelFactory):
 class TransactionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Transaction
+    
+    # if we do not assign these attributes here then they will remain blank
+    
+    # currency is auto generated on creation of transaction
     currency = factory.SubFactory(CurrencyFactory)
     payment_intent_id = None
+    email = factory.LazyAttribute(lambda _: fake.email())
+    name = factory.LazyAttribute(lambda _: fake.name())
+    
