@@ -1451,4 +1451,3 @@ def fill_transaction(transaction):
 ```
 
 A test for this util should mock the API call and the 2 db calls:
-

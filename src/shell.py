@@ -9,6 +9,6 @@ from apps.Payment.models import Currency
 class CurrencyFactory(factory.django.DjangoModelFactory):
 	class Meta:
 		model = Currency
-	name, code = fake.currency()
+	code, name = fake.currency()
 
 CurrencyFactory()

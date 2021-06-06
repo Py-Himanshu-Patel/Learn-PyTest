@@ -1,8 +1,6 @@
-import string
+import uuid
 
 from django.db import models
-from django.utils import timezone
-from hashid_field import HashidAutoField
 
 
 class Currency(models.Model):
@@ -18,25 +16,18 @@ class Currency(models.Model):
 
 
 class Transaction(models.Model):
-    """ Transaction model """
-    PaymentStatuses = [
-        ('pending', 'pending'),
-        ('done', 'done')
-    ]
-
-    id = HashidAutoField(primary_key=True, min_length=8,
-                         alphabet=string.printable.replace('/', ''))
+    uid = models.UUIDField(default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=50, null=False, blank=False)
     email = models.EmailField(max_length=50, null=False, blank=False)
-    creation_date = models.DateTimeField(
-        auto_now_add=True, null=False, blank=False)
+    creation_date = models.DateTimeField(auto_now_add=True)
     currency = models.ForeignKey(
-        Currency, null=False, blank=False, default=1, on_delete=models.PROTECT)
-    payment_status = models.CharField(
-        choices=PaymentStatuses, default=PaymentStatuses[0][0], max_length=21)
+        Currency, null=False, blank=False, on_delete=models.PROTECT)
     payment_intent_id = models.CharField(
         max_length=100, null=True, blank=False, default=None)
     message = models.TextField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.name} - {self.id} : {self.currency}"
 
     @property
     def link(self):
