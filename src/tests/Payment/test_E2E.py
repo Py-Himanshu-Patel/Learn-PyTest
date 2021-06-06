@@ -1,6 +1,5 @@
 import json
 import pytest
-import pprint
 
 from .factory import CurrencyFactory, TransactionFactory
 from apps.Payment.models import Currency, Transaction

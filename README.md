@@ -1192,7 +1192,7 @@ From now we are using `setup.cfg` and not `pytest.ini`. As `pytest.ini` only use
 
 - `Unit Tests`: test of a relevant piece of code isolated (mostly by mocking external code to the code tested) from interactions with other units of code. Be it internal code like a helper function we made to clean the code, a call to the database or a call to an external API.
 - `Integration Tests`: tests that test a piece of code without isolating them from interactions with other units.
-- `e2e Tests`: e2e stands for “end to end”, this tests are integration tests that test the end to end flows of the Django app we are testing.
+- `E2E Tests`: e2e stands for “end to end”, this tests are integration tests that test the end to end flows of the Django app we are testing.
 - `Regression Tests`: a kind of test that, be it integration or unit, was originated by a bug that was covered right after fixing it by a test to expect it in the future.
 
 ### A Proper Test Flow
@@ -1434,11 +1434,56 @@ def api_client():
     return APIClient
 ```
 
-Now write End to End test as (test_E2E.py) then we can proceed with building the rest of the app from the models up.
+Now write End to End test as in **test_E2E.py** then we can proceed with building the rest of the app from the models up. First create the models and then the factory to access them.
+
+```python
+import factory
+
+from apps.Payment.models import Transaction, Currency
+from faker import Faker
+fake = Faker()
+
+
+class CurrencyFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Currency
+        # this make sure that if a repeated value is 
+        # passed in these two fields then same obj is returned
+        # without causing any duplicacy error
+
+        # django_get_or_create = ('name', 'code')
+
+
+    # code and name get assigned when the class is called hence if we use
+    # create_batch(n) we get all n object same
+ 
+    # code, name = fake.currency() 
+
+    code = factory.LazyAttribute(lambda _: fake.currency()[0]) 
+    name = factory.LazyAttribute(lambda _: fake.currency()[1]) 
+    symbol = '$'
+
+
+class TransactionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Transaction
+    
+    # if we do not assign these attributes here then they will remain blank
+    
+    # currency is auto generated on creation of transaction
+    currency = factory.SubFactory(CurrencyFactory)
+    payment_intent_id = None
+    email = factory.LazyAttribute(lambda _: fake.email())
+    name = factory.LazyAttribute(lambda _: fake.name())
+```
+
+- In `TransactionFactory` we assign all possible fields with fake data those who are left will have blank or null value.
+
+- In `CurrencyFactory` since we need to create multiple `Currency` object using `create_batch()` we can not assign a value which is constant to any of the field since that will be same each time we call `CurrencyFactory` as hence will produce `UNIQUE CONSTRAINT FAIL`. Also we can use `LazyAttribute` to assign some fields when other are already assigned and argument of `lambda` is the object which is going to be saved.
 
 ### Utils
 
-Utils are helper functions that will be spreaded all along our code, so you could find yourself building them and their correspondent tests in any order.
+Utils are helper functions that will be spreaded all along our code. Like one field we can fill on the backend is the `payment_intent_id` field
 
 The first util we are going to make, is a `fill_transaction` function that , given an `Transaction` model's instance, will fill the fields that are not intended to be filled by the user.
 
@@ -1466,3 +1511,5 @@ def fill_transaction(transaction):
 ```
 
 A test for this util should mock the API call and the 2 db calls:
+
+.. to be continued.
