@@ -171,10 +171,11 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 
 ## States of Fixtures and Factories
 
-1. Arrange - prepare everything for our test
-2. Act - state-changing action that kicks off the behavior we want to test
-3. Assert - where we look at that resulting state and check if it looks how we’d expect
-4. CleanUp - where the test clean up after execution, so other tests aren’t being accidentally influenced by it.
+1. `Arrange` - prepare everything for our test
+2. `MockUp` - mock the database, external code or third party API request
+3. `Act` - state-changing action that kicks off the behavior we want to test
+4. `Assert` - where we look at that resulting state and check if it looks how we’d expect
+5. `CleanUp` - where the test clean up after execution, so other tests aren’t being accidentally influenced by it.
 
 ### Fixtures
 
@@ -1144,21 +1145,23 @@ PyTest settings configurations can be set in `pytest.ini` files under `[pytest]`
 ```bash
 :in pytest.ini
 [pytest]
-[tool:pytest]
-[tool:pytest]
 DJANGO_SETTINGS_MODULE = MyProject.settings
 markers = slow: slow running test
 python_files = tests.py test_*.py *_tests.py
-addopts = --cov=tests/ --cov-report html
+addopts = --cov=apps/ --cov-report html
 
 :in setup.cfg
 [tool:pytest]
-[tool:pytest]
-[tool:pytest]
 DJANGO_SETTINGS_MODULE = MyProject.settings
 markers = slow: slow running test
 python_files = tests.py test_*.py *_tests.py
-addopts = --cov=tests/ --cov-report html
+addopts = --cov=apps/ --cov-report html
+
+[coverage:run]
+omit = */migrations/*, 
+        tests/*, 
+        */test.py, 
+        */__init__.py
 ```
 
 From now we are using `setup.cfg` and not `pytest.ini`. As `pytest.ini` only usefull for pytest while `setup.cfg` is usefull for various types of plugins.
@@ -1167,6 +1170,8 @@ From now we are using `setup.cfg` and not `pytest.ini`. As `pytest.ini` only use
 - `python_files`: indicates the patterns pytest will use to match test files.
 - `addopts`: indicates the command line arguments pytest should run with whenever we run pytest .
 - `markers`: here we define the markers we and our team may later agree to use for categorizing tests (i.e: "unit", "integration", "e2e", "regression", etc.).
+
+**Note**: Mind the `,` after each omit argument
 
 ### Types of Tests
 
@@ -1390,4 +1395,60 @@ CurrencyFactory.build_batch() # --> Batch of 3 instances
 ### Test Examples
 
 And inside `tests/test_app/conftest.py` we'll set our factories as fixtures to later access them as a param in our test functions.
+
+### E2E Tests
+
+Once we already have our models and their factories created go for end to end tests.
+
+```text
+GET     api/transactions        List all transaction objects
+POST    api/transactions        Create a transaction object
+GET     api/transactions        Retrieve a transaction object
+PUT     api/transactions/hash   Update a transaction object
+PATCH   api/transactions/hash   Update a field of a transaction object
+DELETE  api/transactions/hash   Delete a transaction object  
+```
+
+Lets make a DRF API client as a fixture for later use.
+
+```python
+# in root level tests/conftest.py
+
+@pytest.fixture
+def api_client():
+    return APIClient
+```
+
+Now write End to End test as (test_E2E.py) then we can proceed with building the rest of the app from the models up.
+
+### Utils
+
+Utils are helper functions that will be spreaded all along our code, so you could find yourself building them and their correspondent tests in any order.
+
+The first util we are going to make, is a `fill_transaction` function that , given an `Transaction` model's instance, will fill the fields that are not intended to be filled by the user.
+
+```python
+import string
+import random
+
+
+def strip_dummy_api(length):
+    chars = string.ascii_letters + string.digits
+    return ''.join(random.choices(chars, k=length))
+
+
+def fill_transaction(transaction):
+    # get a dummy transaction id before making an transaction
+    payment_intent_id = strip_dummy_api(6)
+
+    # get the queryset of all those transaction with this id 
+    t = transaction.__class__.objects.filter(id=transaction.id)
+
+    # We use update not to trigger a save-signal recursion Overflow
+    t.update(  
+        payment_intent_id=payment_intent_id,
+    )
+```
+
+A test for this util should mock the API call and the 2 db calls:
 
