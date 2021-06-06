@@ -5,20 +5,16 @@ name = "pypi"
 
 [packages]
 django = "*"
-python-decouple = "*"
-pytest-factoryboy = "*"
-faker = "*"
 djangorestframework = "*"
+pytest = "*"
 selenium = "*"
-django-hashid-field = "==1.0.0"
+faker = "*"
 pytest-cov = "*"
-model-bakery = "*"
+python-decouple = "*"
+pytest-django = "*"
+pytest-factoryboy = "*"
 
 [dev-packages]
-pipenv = "*"
-install = "*"
-pytest = "*"
-pytest-django = "*"
 
 [requires]
 python_version = "3.8"

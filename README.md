@@ -5,6 +5,7 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 ## Technology Used
 
 - Python
+- Python-Decouple
 - Django
 - PyTest
 - PyTest-Factory Boy
@@ -13,6 +14,20 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 - Selenium
 - pytest-cov
 - model-bakery
+
+In case Pipfile do not work
+
+```bash
+pipenv install django
+pipenv install python-decouple
+pipenv install djangorestframework
+pipenv install pytest
+pipenv install pytest-django
+pipenv install selenium
+pipenv install pytest-factoryboy
+pipenv install Faker
+pipenv install pytest-cov
+```
 
 ## Index
 
