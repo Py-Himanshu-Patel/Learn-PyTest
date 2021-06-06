@@ -31,7 +31,7 @@ def test_product_instance(
         }
     )
 
-    print(response.status_code)
-    print(response.data)
+    print(response.status_code)     # 400
+    print(response.data)            # json
 
     assert response.status_code == validity

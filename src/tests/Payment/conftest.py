@@ -1,43 +1,22 @@
 import pytest
-from model_bakery import baker
+from .factory import TransactionFactory, CurrencyFactory
+from pytest_factoryboy import register
 
-
-def utbb():
-    def unfilled_transaction_bakery_batch(n):
-        utbb = baker.make(
-            'transaction.Transaction',
-            amount_in_cents=1032000,  # --> Passes min. payload restriction in every currency
-            _fill_optional=[
-                'name',
-                'email',
-                'currency',
-                'message'
-            ],
-            _quantity=n
-        )
-        return utbb
-    return unfilled_transaction_bakery_batch
+register(CurrencyFactory)
+register(TransactionFactory)
 
 
 @pytest.fixture
-def ftbb():
-    def filled_transaction_bakery_batch(n):
-        utbb = baker.make(
-            'transaction.Transaction',
-            amount_in_cents=1032000,  # --> Passes min. payload restriction in every currency
-            _quantity=n
-        )
-        return utbb
-    return filled_transaction_bakery_batch
-
+def create_currency(db, currency_factory):
+    currency = currency_factory.create()
+    return currency
 
 @pytest.fixture
-def ftb():
-    def filled_transaction_bakery():
-        utbb = baker.make(
-            'transaction.Transaction',
-            amount_in_cents=1032000,  # --> Passes min. payload restriction in every currency
-            currency=baker.make('transaction.Currency')
-        )
-        return utbb
-    return filled_transaction_bakery
+def build_currency(db, currency_factory):
+    currency = currency_factory.build()
+    return currency
+
+@pytest.fixture
+def create_transaction(db, transaction_factory):
+    transaction = transaction_factory.create()
+    return transaction

@@ -8,7 +8,7 @@ register(UserFactory)
 register(ProductFactory)
 register(CategoryFactory)
 
-# use a fixture to access datanase while using 
+# use a fixture to access database while using 
 # factory and prepare data for test
 @pytest.fixture
 def create_user(db, user_factory):

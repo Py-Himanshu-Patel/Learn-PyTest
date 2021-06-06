@@ -1,14 +1,13 @@
 # to run use: python manage.py shell < shell.py
 
-import factory
-from faker import Faker
-fake = Faker()
+from tests.Payment.factory import CurrencyFactory
 from apps.Payment.models import Currency
 
+print(Currency.objects.all())
+print(Currency.objects.all().count())
+print('----------------------')
+# print(Currency.objects.all())
+# c = CurrencyFactory.build()
+for c in CurrencyFactory.create_batch(3):
+	print(c.__dict__)
 
-class CurrencyFactory(factory.django.DjangoModelFactory):
-	class Meta:
-		model = Currency
-	code, name = fake.currency()
-
-CurrencyFactory()

@@ -34,5 +34,5 @@ def test_product_instance(
     )
 
     item = Product.objects.count()
-    print(item)
+    print(item)         # 1
     assert item == validity

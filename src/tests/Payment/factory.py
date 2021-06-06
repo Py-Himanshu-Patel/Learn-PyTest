@@ -1,0 +1,32 @@
+import factory
+
+from apps.Payment.models import Transaction, Currency
+from faker import Faker
+fake = Faker()
+
+
+class CurrencyFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Currency
+        # this make sure that if a repeated value is 
+        # passed in these two fields then same obj is returned
+        # without causing any duplicacy error
+
+        # django_get_or_create = ('name', 'code')
+
+
+    # code and name get assigned when the class is called hence if we use
+    # create_batch(n) we get all n object same
+ 
+    # code, name = fake.currency() 
+
+    code = factory.LazyAttribute(lambda _: fake.currency()[0]) 
+    name = factory.LazyAttribute(lambda _: fake.currency()[1]) 
+    symbol = '$'
+
+
+class TransactionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Transaction
+    currency = factory.SubFactory(CurrencyFactory)
+    payment_intent_id = None
