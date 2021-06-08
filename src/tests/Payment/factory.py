@@ -20,8 +20,13 @@ class CurrencyFactory(factory.django.DjangoModelFactory):
  
     # code, name = fake.currency() 
 
-    code = factory.LazyAttribute(lambda _: fake.currency()[0]) 
-    name = factory.LazyAttribute(lambda _: fake.currency()[1]) 
+    # Since currency is declared as a parameter, it won't be passed to 
+    # the model (it's automatically added to Meta.exclude.
+    class Params:
+        currency = factory.Faker("currency")  # (code, name)
+
+    code = factory.LazyAttribute(lambda o: o.currency[0])
+    name = factory.LazyAttribute(lambda o: o.currency[1])
     symbol = '$'
 
 
