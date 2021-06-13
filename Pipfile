@@ -13,6 +13,7 @@ pytest-cov = "*"
 python-decouple = "*"
 pytest-django = "*"
 pytest-factoryboy = "*"
+pytest-mock = "*"
 
 [dev-packages]
 

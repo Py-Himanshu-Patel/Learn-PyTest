@@ -20,3 +20,7 @@ def build_currency(db, currency_factory):
 def create_transaction(db, transaction_factory):
     transaction = transaction_factory.create()
     return transaction
+
+@pytest.fixture
+def get_payment_id():
+    return "tnMMv6"

@@ -14,6 +14,7 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 - Selenium
 - pytest-cov
 - model-bakery
+- pytest-mock
 
 In case Pipfile do not work
 
@@ -27,6 +28,7 @@ pipenv install selenium
 pipenv install pytest-factoryboy
 pipenv install Faker
 pipenv install pytest-cov
+pipenv install pytest-mock
 ```
 
 ## Index
@@ -1483,6 +1485,11 @@ class TransactionFactory(factory.django.DjangoModelFactory):
 
 ### Utils
 
+To understand it better we need to know `mock` and `patch`.
+
+- [Medium Blog for patch](https://medium.com/@durgaswaroop/writing-better-tests-in-python-with-pytest-mock-part-2-92b828e1453c)
+- [Patching, Mock and Dependency Injection](https://levelup.gitconnected.com/unit-testing-in-python-mocking-patching-and-dependency-injection-301280db2fed)
+
 Utils are helper functions that will be spreaded all along our code. Like one field we can fill on the backend is the `payment_intent_id` field
 
 The first util we are going to make, is a `fill_transaction` function that , given an `Transaction` model's instance, will fill the fields that are not intended to be filled by the user.
@@ -1492,24 +1499,58 @@ import string
 import random
 
 
-def strip_dummy_api(length):
-    chars = string.ascii_letters + string.digits
-    return ''.join(random.choices(chars, k=length))
+class Stripe:
+    # to represent a call to strip API
+    @staticmethod
+    def create(length):
+        chars = string.ascii_letters + string.digits
+        return ''.join(random.choices(chars, k=length))
 
 
 def fill_transaction(transaction):
-    # get a dummy transaction id before making an transaction
-    payment_intent_id = strip_dummy_api(6)
+    # get a transaction id before making an transaction
+    payment_intent_id = Stripe.create(6)
 
-    # get the queryset of all those transaction with this id 
+    # get the queryset of all those transaction with this id
     t = transaction.__class__.objects.filter(id=transaction.id)
 
     # We use update not to trigger a save-signal recursion Overflow
-    t.update(  
+    t.update(
         payment_intent_id=payment_intent_id,
     )
 ```
 
 A test for this util should mock the API call and the 2 db calls:
 
-.. to be continued.
+```python
+from .factory import TransactionFactory
+from apps.Payment.utils import Stripe
+from apps.Payment.models import Transaction
+from apps.Payment.utils import fill_transaction
+
+
+class TestUtilFunctions:
+
+    def test_fill_transaction(self, mocker, get_payment_id):
+
+        transaction = TransactionFactory.build()
+        strip_intent_id = get_payment_id
+
+        # mocking API call
+        payment_intent_mock = mocker.Mock(return_value=strip_intent_id)
+        Stripe.create = payment_intent_mock
+
+        # mocking DB calls
+        filter_call_mock = mocker.Mock()
+        Transaction.objects.filter = filter_call_mock
+        update_call_mock = mocker.Mock()
+        filter_call_mock.return_value.update = update_call_mock
+
+        # call the function to be tested
+        fill_transaction(transaction)
+
+        filter_call_mock.assert_called_with(id=transaction.id)
+        update_call_mock.assert_called_with(
+            payment_intent_id=strip_intent_id
+        )
+```
