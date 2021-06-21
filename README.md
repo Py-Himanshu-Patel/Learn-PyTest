@@ -1520,6 +1520,16 @@ def fill_transaction(transaction):
     )
 ```
 
+In conftest.py of Payment tests
+
+```python
+import pytest
+
+@pytest.fixture
+def get_payment_id():
+    return "tnMMv6"
+```
+
 A test for this util should mock the API call and the 2 db calls:
 
 ```python
@@ -1553,4 +1563,49 @@ class TestUtilFunctions:
         update_call_mock.assert_called_with(
             payment_intent_id=strip_intent_id
         )
+```
+
+### Signals.py
+
+Write a signal to fill some field in model post save.
+
+```python
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+from apps.Payment.models import Transaction
+from apps.Payment.utils import fill_transaction
+
+
+@receiver(post_save, sender=Transaction)
+def transaction_filler(sender, instance, created, *args, **kwargs):
+    ''' fill 'payment_intent_id' field in a transacton before saving '''
+
+    if created:
+        fill_transaction(instance)
+```
+
+This signal update the `payment_intent_id` field on payment model. Lets try to test this signal. We will send a `post_save` signal with a instance which is not yet saved in DB and hence the signal calls `fill_transaction`.
+
+```python
+import pytest
+
+from django.db.models.signals import post_save
+
+from apps.Payment.models import Transaction
+from tests.Payment.factory import TransactionFactory
+
+
+pytestmark = pytest.mark.unit
+
+class TestTransactionFiller:
+
+    def test_post_save(self, mocker):
+        instance = TransactionFactory.build()
+        mock = mocker.patch(
+            'apps.Payment.signals.fill_transaction'
+        )
+
+        post_save.send(Transaction, instance=instance, created=True)
+        mock.assert_called_with(instance)
 ```
