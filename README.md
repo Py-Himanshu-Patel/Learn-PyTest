@@ -1565,7 +1565,7 @@ class TestUtilFunctions:
         )
 ```
 
-### Signals.py
+### Signals
 
 Write a signal to fill some field in model post save.
 
@@ -1609,3 +1609,10 @@ class TestTransactionFiller:
         post_save.send(Transaction, instance=instance, created=True)
         mock.assert_called_with(instance)
 ```
+
+Some points about `mocker`:
+
+1. When we do the patch, we create a new mocked function that gets called, bypassing the original function. Thus original `fill_transaction` function do not get called instead a mock `fill_transaction` is called.
+2. We mocked `fill_transaction` in `signal.py` file where it is used and not the file from where it is imported.
+
+### Serializers
