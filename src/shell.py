@@ -1,13 +1,12 @@
 # to run use: python manage.py shell < shell.py
 
-from tests.Payment.factory import CurrencyFactory
-from apps.Payment.models import Currency
+from tests.Payment.factory import TransactionFactory
+from apps.Payment.models import Transaction
 
-print(Currency.objects.all())
-print(Currency.objects.all().count())
+print(Transaction.objects.all())
+print(Transaction.objects.all().count())
 print('----------------------')
-# print(Currency.objects.all())
-# c = CurrencyFactory.build()
-for c in CurrencyFactory.create_batch(3):
-	print(c.__dict__)
 
+for t in TransactionFactory.create_batch(3):
+	print(t.__dict__)
+	print()
