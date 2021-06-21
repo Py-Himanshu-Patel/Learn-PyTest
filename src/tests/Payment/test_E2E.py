@@ -202,6 +202,7 @@ class TestTransactionEndpoints:
         )
         expected_json.pop('_state')
         expected_json.pop('currency_id')
+        expected_json.pop('payment_intent_id')      # remove from comparison
 
         url = f'{self.endpoint}{old_transaction.id}/'
 
@@ -212,7 +213,18 @@ class TestTransactionEndpoints:
         )
 
         assert response.status_code == 200 or response.status_code == 301
-        assert json.loads(response.content) == expected_json
+
+        # as this field (payment_intent_id) is None in old_transaction ans 
+        # new_transaction as produced by factory, as factory is not dependent 
+        # on any API call to get that field
+
+        # so we remove it from response in order to prevent assertion mis match while 
+        # matching payment_intent_id=None in old and new transaction while some random 
+        # string in response
+
+        response = json.loads(response.content)
+        response.pop('payment_intent_id')
+        assert response == expected_json
 
     @pytest.mark.parametrize('field', [
         ('name'),
