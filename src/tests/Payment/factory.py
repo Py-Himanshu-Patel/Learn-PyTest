@@ -38,7 +38,16 @@ class TransactionFactory(factory.django.DjangoModelFactory):
     
     # currency is auto generated on creation of transaction
     currency = factory.SubFactory(CurrencyFactory)
-    payment_intent_id = None
     email = factory.LazyAttribute(lambda _: fake.email())
     name = factory.LazyAttribute(lambda _: fake.name())
-    
+
+
+class FilledTransactionFactory(factory.django.DjangoModelFactory):
+    ''' Transaction obj with 'payment_intent_id' field assigned '''
+    class Meta:
+        model = Transaction
+
+    currency = factory.SubFactory(CurrencyFactory)
+    payment_intent_id = "abcdef"
+    email = factory.LazyAttribute(lambda _: fake.email())
+    name = factory.LazyAttribute(lambda _: fake.name())

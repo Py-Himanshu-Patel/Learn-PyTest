@@ -1616,3 +1616,49 @@ Some points about `mocker`:
 2. We mocked `fill_transaction` in `signal.py` file where it is used and not the file from where it is imported.
 
 ### Serializers
+
+The unit tests for serializers should aim to test two things:
+
+1. That it can properly serialize a Model instance
+2. That it can properly turn valid serialized data into a model (a.k.a "deserialize")
+
+To know more explore the test files [Test Serializer](src/tests/Payment/test_serializers.py)
+
+One more thing to point out here: When we create a instance A which result in creation of another instance B (as B is foreign key dependency for A) then that instance B is saved in DB (if we use factory-boy). In such case we need to access DB to make test case and it turns out to be a `integration_test` rather then `unit_test`.
+
+```python
+class TestUnfilledTransactionSerializer:
+    
+    @pytest.mark.unit
+    def test_serialize_model(self):
+        transaction = TransactionFactory.build()
+        expected_serialized_data = {
+            'name': transaction.name,
+            'currency': transaction.currency.code,
+            'email': transaction.email,
+            'message': transaction.message,
+        }
+
+        serializer = UnfilledTransactionSerializer(transaction)
+        assert serializer.data == expected_serialized_data
+
+    # its a integration test as I can't do it without accessing DB
+    @pytest.mark.django_db
+    def test_serialized_data(self):
+        # although the obj of Transaction is not saved in DB but
+        # but instance of Currency is save to which transaction refers
+        c = CurrencyFactory()
+        transaction = TransactionFactory.build(currency=c)
+
+        valid_serialized_data = {
+            'name': transaction.name,
+            'currency': transaction.currency.code,
+            'email': transaction.email,
+            'message': transaction.message,
+        }
+
+        serializer = UnfilledTransactionSerializer(data=valid_serialized_data)
+        
+        assert serializer.is_valid(raise_exception=True)
+        assert serializer.errors == {}
+```
