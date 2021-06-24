@@ -15,6 +15,7 @@ Learning PyTest and Selenium to create unit test and other automation. Starting 
 - pytest-cov
 - model-bakery
 - pytest-mock
+- django-mock-queries
 
 In case Pipfile do not work
 
@@ -29,6 +30,7 @@ pipenv install pytest-factoryboy
 pipenv install Faker
 pipenv install pytest-cov
 pipenv install pytest-mock
+pipenv install django-mock-queries
 ```
 
 ## Index
@@ -1662,3 +1664,10 @@ class TestUnfilledTransactionSerializer:
         assert serializer.is_valid(raise_exception=True)
         assert serializer.errors == {}
 ```
+
+## Viewsets
+
+We'll use DRF viewsets for CRUD operations in our models, skipping the need to test url configuration.
+
+With plain `class-based-views` or `function-based-views`, we would **start testing the view from the view itself and isolate the view from the urlconf** that triggers that view. But since we are using routers for this, we start testing the viewsets from the endpoint itself with an API Client.
+
