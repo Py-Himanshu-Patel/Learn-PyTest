@@ -51,3 +51,13 @@ class FilledTransactionFactory(factory.django.DjangoModelFactory):
     payment_intent_id = "abcdef"
     email = factory.LazyAttribute(lambda _: fake.email())
     name = factory.LazyAttribute(lambda _: fake.name())
+    message = fake.text()
+
+
+class CurrencylessTransactionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Transaction
+    
+    email = factory.LazyAttribute(lambda _: fake.email())
+    name = factory.LazyAttribute(lambda _: fake.name())
+    message = fake.text()
