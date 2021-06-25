@@ -1,7 +1,6 @@
-import pytest
 import json
+from unittest import mock
 import factory
-
 
 from django.urls import reverse
 from django_mock_queries.mocks import MockSet
@@ -51,7 +50,6 @@ class TestCurrencyViewset:
 		assert response.status_code == 200
 		assert len(json.loads(response.content)) == 3
 
-
 	def test_retrieve(self, mocker, rf):
 		# NO id assigned until the obj is save in DB
 		currency = CurrencyFactory.build()
@@ -80,4 +78,84 @@ class TestCurrencyViewset:
 		assert response.status_code == 200
 		# {'name': 'Iranian rial', 'code': 'IRR', 'symbol': '$'}
 		assert json.loads(response.content) == expected_json
+
+	def test_create(self, mocker, rf):
+		# {'code': 'CVE', 'name': 'Cape Verdean escudo', 'symbol': '$'} 
+		valid_data_dict = factory.build(
+			dict,
+			FACTORY_CLASS=CurrencyFactory
+		)
+
+		# /api/currency/
+		url = reverse('currency-list')
+
+		# <WSGIRequest: POST '/api/currency/'>
+		request = rf.post(
+			url,
+			content_type='application/json',
+			data=json.dumps(valid_data_dict)
+		)
+
+		# Currency.save() = <MagicMock name='save()' id='2183017755552'>
+		# in case of no return_value specified it returns MagicMock obj
+		mocker.patch.object(
+			Currency, 'save'
+		)
+
+		view = CurrencyViewSet.as_view(
+			{'post': 'create'}
+		)
+
+		response = view(request).render()
+
+		assert response.status_code == 201
+		# response.content = b'{"name":"Cape Verdean escudo","code":"CVE","symbol":"$"}
+		assert json.loads(response.content) == valid_data_dict
+
+	def test_udpate(self, mocker, rf):
+		old_currency = CurrencyFactory.build()
+		new_currency = CurrencyFactory.build()
+
+		# {'code': 'MKD', 'name': 'Macedonian denar', 'symbol': '$'}
+		currency_dict = {
+			'code': new_currency.code,
+			'name': new_currency.name,
+			'symbol': new_currency.symbol
+		}
+
+		# /api/currency/None/
+		url = reverse('currency-detail', kwargs={'pk': old_currency.id})
+		# <WSGIRequest: PUT '/api/currency/None/'>
+		request = rf.put(
+			url,
+			content_type='application/json',
+			data=json.dumps(currency_dict)
+		)
+
+		# return old obj in place of searching a obj in DB with pk=None
+		mocker.patch.object(
+			CurrencyViewSet,
+			'get_object',
+			return_value=old_currency
+		)
+
+		# patched so that we don't have to save updated obj
+		# basically preventing executing of save() method
+		mocker.patch.object(
+			Currency,
+			'save'
+		)
+
+		# get view for put:update request from model viewset
+		view = CurrencyViewSet.as_view(
+			{'put': 'update'}
+		)
+
+		response = view(request, pk=old_currency.id).render()
+		assert response.status_code == 200
+		# b'{"name":"Macedonian denar","code":"MKD","symbol":"$"}'
+		assert json.loads(response.content) == currency_dict
+
+	def test_partical_update(self, mocker, rf):
+		pass
 

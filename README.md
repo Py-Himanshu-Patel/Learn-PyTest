@@ -1671,3 +1671,28 @@ We'll use DRF viewsets for CRUD operations in our models, skipping the need to t
 
 With plain `class-based-views` or `function-based-views`, we would **start testing the view from the view itself and isolate the view from the urlconf** that triggers that view. But since we are using routers for this, we start testing the viewsets from the endpoint itself with an API Client.
 
+### Request Factory
+
+Class that lets you create mock Request objects for use in testing.
+
+```python
+rf = RequestFactory()
+get_request = rf.get('/hello/')
+post_request = rf.post('/submit/', {'foo': 'bar'})
+```
+
+Once you have a request object you can pass it to any view function, just as if that view had been hooked up using a URLconf.
+
+```python
+request = rf.put(
+    url,
+    content_type='application/json',
+    data=json.dumps(currency_dict)
+)
+
+view = CurrencyViewSet.as_view(
+    {'put': 'update'}
+)
+
+response = view(request, pk=old_currency.id).render()
+```
