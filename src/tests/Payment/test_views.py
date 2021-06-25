@@ -1,5 +1,6 @@
+from django.http import request
+import pytest
 import json
-from unittest import mock
 import factory
 
 from django.urls import reverse
@@ -156,6 +157,70 @@ class TestCurrencyViewset:
 		# b'{"name":"Macedonian denar","code":"MKD","symbol":"$"}'
 		assert json.loads(response.content) == currency_dict
 
-	def test_partical_update(self, mocker, rf):
-		pass
+	@pytest.mark.parametrize(
+		'field',
+		[
+			('name'),
+			('code'),
+			('symbol'),
+		]
+	)
+	def test_partical_update(self, mocker, rf, field):
+		currency = CurrencyFactory.build()
 
+		valid_field = currency.__dict__[field]
+		# /api/currency/None/
+		url = reverse(
+			'currency-detail', kwargs={'pk': currency.id}
+		)
+
+		# <WSGIRequest: PATCH '/api/currency/None/'>
+		request = rf.patch(
+			url,
+			content_type='application/json',
+			data=json.dumps({field: valid_field})
+		)
+
+		mocker.patch.object(
+			CurrencyViewSet, 'get_object', return_value=currency
+		)
+		mocker.patch.object(
+			Currency, 'save'
+		)
+
+		view = CurrencyViewSet.as_view(
+			{'patch': 'partial_update'}
+		)
+
+		response = view(request).render()
+
+		assert response.status_code == 200
+		# b'{"name":"Bermudian dollar","code":"BMD","symbol":"$"}'
+		assert json.loads(response.content)[field] == valid_field
+
+	def test_delete(self, mocker, rf):
+		currency = CurrencyFactory.build()
+		url = reverse('currency-detail', kwargs={'pk': currency.id})
+		request = rf.delete(url)
+
+		mocker.patch.object(
+			CurrencyViewSet,
+			'get_object',
+			return_value=currency
+		)
+		
+		del_mock = mocker.patch.object(
+			Currency, 'delete'
+		)
+
+		view = CurrencyViewSet.as_view(
+			{'delete': 'destroy'}
+		)
+
+		response = view(request).render()
+
+		assert response.status_code == 204
+		assert del_mock.assert_called
+
+class TestTransactionViewSet:
+	pass
