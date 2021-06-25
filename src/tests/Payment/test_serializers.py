@@ -1,9 +1,9 @@
-from logging import exception
 import factory
 import pytest
 
+from rest_framework.relations import SlugRelatedField
 from apps.Payment.serializers import CurrencySerializer, UnfilledTransactionSerializer, FilledTransactionSerializer
-from tests.Payment.factory import CurrencyFactory, TransactionFactory, FilledTransactionFactory
+from tests.Payment.factory import CurrencyFactory, TransactionFactory, FilledTransactionFactory, CurrencylessTransactionFactory
 
 
 class TestCurrencySerializer:
@@ -41,13 +41,10 @@ class TestUnfilledTransactionSerializer:
         serializer = UnfilledTransactionSerializer(transaction)
         assert serializer.data == expected_serialized_data
 
-    # its a integration test as I can't do it without accessing DB
-    @pytest.mark.django_db
-    def test_serialized_data(self):
-        # although the obj of Transaction is not saved in DB but
-        # but instance of Currency is save to which transaction refers
-        c = CurrencyFactory()
-        transaction = TransactionFactory.build(currency=c)
+    def test_serialized_data(self, mocker):
+        currency = CurrencyFactory.build()
+        transaction = CurrencylessTransactionFactory.build()
+        transaction.currency = currency
 
         valid_serialized_data = {
             'name': transaction.name,
@@ -55,6 +52,11 @@ class TestUnfilledTransactionSerializer:
             'email': transaction.email,
             'message': transaction.message,
         }
+
+        # we do this to avoid searching DB for currency instance 
+        # with respective currency code
+        retrieve_currency = mocker.Mock(return_value=currency)
+        SlugRelatedField.to_internal_value = retrieve_currency
 
         serializer = UnfilledTransactionSerializer(data=valid_serialized_data)
         

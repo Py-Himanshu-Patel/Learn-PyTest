@@ -254,8 +254,7 @@ class TestTransactionViewSet:
         assert response.status_code == 200
         assert len(json.loads(response.content)) == 3
 
-    # integration test
-    def test_create(self, mocker, rf, db):
+    def test_create(self, mocker, rf):
         # we create the Transaction instance without assigning Currency to it
         # in this way we do not need to save Currency object in DB. Remember 
         # Transaction object can only refer to Currency object if Currency instance 
@@ -299,3 +298,6 @@ class TestTransactionViewSet:
 
         assert response.status_code == 201
         assert json.loads(response.content) == valid_data_dict
+
+    def test_retrive(self, mocker, rf):
+        pass
