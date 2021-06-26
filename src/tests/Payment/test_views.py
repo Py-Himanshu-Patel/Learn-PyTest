@@ -1,5 +1,4 @@
 import json
-from _pytest.fixtures import FixtureRequest
 
 import pytest
 from apps.Payment.models import Currency, Transaction
@@ -279,6 +278,7 @@ class TestTransactionViewSet:
         # provide currency CODE in place of currency obj
         # get a Currecny instance and let Transaction instance refer it
         currency = CurrencyFactory.build()
+
         # {'currency': 'BWP', 'email': 'hsmith@gmail.com', 'name': 'Melissa Baker'}
         valid_data_dict['currency'] = currency.code
 
@@ -309,7 +309,7 @@ class TestTransactionViewSet:
         assert response.status_code == 201
         assert json.loads(response.content) == valid_data_dict
 
-    def test_retrive(self, mocker, rf):
+    def test_retreive(self, mocker, rf):
         transaction = FilledTransactionFactory.build()
         # do not modified the actual __dict__ attribute of transaction
         # obj as that will determine the results
