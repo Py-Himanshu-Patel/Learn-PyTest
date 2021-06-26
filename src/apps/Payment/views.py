@@ -12,7 +12,7 @@ class CurrencyViewSet(ModelViewSet):
 
 
 class TransactionViewset(ModelViewSet):
-    """Transaction Viewset"""
+    """ Transaction Viewset """
 
     queryset = Transaction.objects.all()
 
